@@ -1,4 +1,4 @@
-# MRAC-RL slung-load notebooks (05-07): quick guide
+# MRAC-RL slung-load notebooks (05-08): quick guide
 
 These three notebooks are an **exploratory logbook**. Results are offline (a reduced Newton-Euler model of the quadrotor and a taut point load), run on the development PC (PROXY). They are not Pymunk results, not a stability proof and not a study.
 
@@ -6,8 +6,8 @@ These three notebooks are an **exploratory logbook**. Results are offline (a red
 
 | What | Where |
 |---|---|
-| Notebooks, plotting and widget helpers | this repo, `main`: `05_*.ipynb`, `06_*.ipynb`, `07_*.ipynb`, `mrac_lab/`, `results/s30_offline_grid.csv` |
-| Physics, controllers, metrics (tested code) | thesis repo `gym-pymunk-quadrotor-suspended-load`, branch **`Claude`**, folder `experiments/mrac/` (`quad.py`, `quad_load_pend.py`, `law.py`, `payload_law.py`, `baselines.py`, `offline_metrics.py`) with tests in `tests/mrac/` |
+| Notebooks, plotting and widget helpers | this repo, `main`: `05_*.ipynb` to `08_*.ipynb`, `mrac_lab/`, and the cached grids `results/s30_offline_grid.csv`, `results/vehicle_mismatch_grid.csv`, `results/arm3_a0_grid.csv` |
+| Physics, controllers, metrics (tested code) | thesis repo `gym-pymunk-quadrotor-suspended-load`, branch **`Claude`**, folder `experiments/mrac/` (`quad.py`, `quad_load_pend.py`, `law.py`, `payload_law.py`, `baselines.py`, `offline_metrics.py`, `payload_reference.py`) with tests in `tests/mrac/` |
 | The mathematics | thesis repo `.ai/research/derivations/mrac-quadrotor-payload.md` (cited as "MQP §n" in the notebooks) |
 
 The notebooks import the thesis code from the main thesis checkout. That is the folder `...\Personal\thesis\gym-pymunk-quadrotor-suspended-load`, which must be on the `Claude` branch.
@@ -26,7 +26,10 @@ The notebooks import the thesis code from the main thesis checkout. That is the 
    |---|---|
    | NB05 | about 2.5 min |
    | NB06 | about 1.5 min (it loads the cached grid; set `RECOMPUTE = True` only to rerun the 250 offline episodes, about 4 min on 6 cores) |
-   | NB07 | about 1.5 min |
+   | NB07 | about 1.5 min (loads the cached arm-3 grid) |
+   | NB08 | under 1 min (loads the cached mismatch grid) |
+
+   To regenerate a grid: `python -m mrac_lab.make_grid`, `python -m mrac_lab.make_mismatch_grid` or `python -m mrac_lab.make_a0_grid`, from this folder, with the `.venv-workspace` Python.
 
 4. The interactive panels (sliders and dropdowns) redraw inline figures. Change a value and wait for the redraw.
 
@@ -40,14 +43,17 @@ Command line alternative: `python -m jupyter nbconvert --to notebook --execute -
 | 2 | NB06 (a) | Arm 1: PID+FF with a mass-blind FF (assumes 4 kg); sag with heavier loads | the FF gate uses ideal tension offline (S30 used filtered tension) |
 | 3 | NB06 (b) | Linear-damper derivation: damper only in the attitude row; `N(s)` has no controller gain; zero pair `+-sqrt(g(m+m_L)/(d m))`, about 6 rad/s, from the **offset attachment** | least-damped `zeta`: PID+FF 0.158, softer law 0.244, damper 0.378, peak 0.419 at `kd` about -1.7; not monotone; continuous-time limit near `abs(kd)` 10 (also exists at `d = 0`) |
 | 4 | NB06 (c-d) | Arm 2 and the offline S30 grid heatmaps | 25 conditions, 5 controllers, 250 runs, 0 failures; ratios vs true-mass PID+FF; only the softer law with true-mass FF is like-for-like with S30 |
-| 5 | NB07 | Arm 3 design: the law, the `Q`-gate check, the open obligations; the preliminary run as "pipeline works" | payload estimates did not order with mass; ONLINE is worse than arm 1; the reference with a nominal payload is the next derivation |
+| 5 | NB06 §4.4-4.5 | The non-minimum-phase zero from the attachment offset; oracle vs fixed form | zero 5.59 / 6.05 / 6.48 rad/s at 2 / 4 / 6 kg (`d = 0.38`); bandwidth rule NOT VERIFIED |
+| 6 | NB07 §10 | Arm 3 with the A0 nominal-payload reference (4 kg / 2 m, softer law inside the reference): ONLINE vs FROZEN (nominal ideals) vs arm 2 | exact identity at nominal; ONLINE 2-5x lower position error than FROZEN; beats arm 2 only for heavier loads; light-load estimate pins at 0; swing damping not inherited (the A0 blind spot `phi - phi_r`); length mismatch: A0 worse than arm 2 |
+| 7 | NB08 | Vehicle mismatch (mass, inertia, arm, motor asymmetry) for PID+FF and the swing laws | asymmetry hurts most (7.5x at 10 %), then vehicle mass (up to 3.3x); inertia and arm at most +4 %; swing laws keep reducing swing |
 
 **Do not say:**
 - That the damper is stable up to `abs(kd) = 10` in the real or sampled loop.
 - That the zero causes that limit, or that the cable torque causes the zero.
 - That damping rises monotonically.
 - That the offline grid reproduces S30.
-- That MRAC improves tracking or identifies the mass.
+- That MRAC improves tracking in general (it helps only for some cells), or that it identifies the mass.
+- That the reference's swing damping carries over to the real load.
 - That the `Q` gate proves stability.
 
 ## Prepare now (about 15 minutes)

@@ -1,7 +1,7 @@
 # EXPLORATORY / offline / PROXY: offline vehicle-mismatch grid, one deterministic run per cell
-# created: 2026-11-24T19:11:56  workers=6  wall_s=35
-# thesis_commit: c16a4f8986263d7323cf6299df1b10a5fce8b54e  branch: mrac/w2d-a0ref  dirty: True
-# thesis_root: C:\Users\Jcardenasbohorquez\OneDrive - Expleo France\Dokumente\Personal\thesis\gym-pymunk-quadrotor-suspended-load-mrac-w2d
+# created: 2026-11-24T21:14:59  workers=6  wall_s=50
+# thesis_commit: 2a329ad957367fc1bc2613f268b1c37b040b7d48  branch: Claude  dirty: True
+# thesis_root: C:\Users\Jcardenasbohorquez\OneDrive - Expleo France\Dokumente\Personal\thesis\gym-pymunk-quadrotor-suspended-load
 # timing: T_s=0.02 N=10 sim_dt=0.002
 # nominal vehicle: m=9.6 J=1.5447816 a_p=0.582 T_max=100.518 tau_m=0.05 d=0.3795; a_n=0.582
 # gains: PIDGains(kp_y=2.2, kp_z=5.3, kd_y=2.0, kd_z=3.0, kp_theta=25.0, kd_theta=20.0, ki_y=0.6, ki_z=1.8, m=9.6, J=1.5447816, g=9.81, min_thrust=2.0103600000000004, max_thrust=201.036, max_torque=57.91646124, max_pitch_angle=0.6, beta_smoothing=0.0)
