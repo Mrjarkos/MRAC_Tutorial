@@ -25,10 +25,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
-#: Default thesis checkout: the W2c lane worktree (later the ``Claude`` branch).
+#: Default thesis checkout: the main checkout on the ``Claude`` branch.
 DEFAULT_THESIS_ROOT = Path(
     r"C:\Users\Jcardenasbohorquez\OneDrive - Expleo France\Dokumente\Personal\thesis"
-    r"\gym-pymunk-quadrotor-suspended-load-mrac-w2c"
+    r"\gym-pymunk-quadrotor-suspended-load"
 )
 ENV_VAR = "MRAC_THESIS_ROOT"
 
