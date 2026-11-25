@@ -1,0 +1,37 @@
+# Regenerating the results the notebooks read
+
+Experiment outputs under `results/mrac_*` are **not tracked** (Javier, 2026-11-25). They are cheap to regenerate (offline reduced model, minutes, development PC). The three cached grids `results/s30_offline_grid.csv`, `vehicle_mismatch_grid.csv` and `arm3_a0_grid.csv` stay tracked.
+
+All commands use the thesis interpreter `..\..\thesis\gym-pymunk-quadrotor-suspended-load\.venv-workspace\Scripts\python.exe` (written `python` below).
+- **Diagnostics (`experiments.mrac.diagnostics`) commands:** run them from **this folder** with `PYTHONPATH=<thesis root>`, so the `--out` paths below land here.
+- **Vanilla runner commands:** use `PYTHONPATH=<thesis root>;.`.
+- **Folder names:** new runs get new folder names (the runner never overwrites). Point the notebook cells at the new folder or rename it to the expected name.
+- **Approval:** every diagnostics command needs `--approval` naming the approved scope. The texts below are the original approvals; a re-run under them reproduces approved work, but anything new needs its own approval.
+
+| Folder read by | Folder | Command | Wall time |
+|---|---|---|---|
+| NB09 §8 | `mrac_long_horizon_20261124T231900` | `python -m experiments.mrac.diagnostics --out results/mrac_long_horizon_20261124T231900 --variant legacy --approval "Javier, 2026-11-24: five fixed-gain 120 s episodes at 6 kg / 2 m"` | about 40 s |
+| NB09 §9 | `mrac_stabilized_core_20261124T230930` | `python -m experiments.mrac.diagnostics --out results/mrac_stabilized_core_20261124T230930 --variant stabilized --arms a0_frozen a0_online no_load_frozen no_load_online --approval "Javier, 2026-11-24: core_plus stabilized-variant verification, 120 s, 1 worker, 5 min cap, 2 GiB"` | about 3.5 min |
+| NB09 §9 | `mrac_stabilized_grid_20261124T230930` | `python -m experiments.mrac.diagnostics --out results/mrac_stabilized_grid_20261124T230930 --variant stabilized --arms a0_frozen a0_online --condition 2,1.5 --condition 6,2.5 --approval "Javier, 2026-11-24: core_plus stabilized-variant verification, 120 s, 1 worker, 5 min cap, 2 GiB"` | about 4 min |
+| NB09 §9 | `mrac_ablation_filter_only_20261124T230930` | same, with `--variant filter_only --arms a0_frozen a0_online` | about 1.5 min |
+| NB09 §9 | `mrac_ablation_regressor_only_20261124T230930` | same, with `--variant regressor_only --arms a0_frozen a0_online` | about 1 min |
+| NB09 §10-11 | `mrac_scopeA_sigma_bias_wind_20261125/<run>` | the 8 commands below (from its `matrix_log.json`) | about 16 min |
+| NB10 §7 | `mrac_vanilla_validation_*` | `python -m mrac_lab.vanilla_runs --stage validation --workers 6 --wall-cap 3600` | about 24 min |
+| NB10 §8 | `mrac_vanilla_tune_*` | `python -m mrac_lab.vanilla_runs --stage tune --workers 6 --wall-cap 5400 --jobs-file mrac_lab/jobs/t1_tune_am3.json`, then `python -m mrac_lab.vanilla_analysis tune <folder>` | about 55 min |
+| NB10 §8 | `mrac_vanilla_heldout_*` | `python -m mrac_lab.vanilla_runs --stage heldout --workers 6 --wall-cap 2400 --jobs-file mrac_lab/jobs/t2_heldout.json`, then `python -m mrac_lab.vanilla_analysis heldout <folder>` | about 17 min |
+
+Scope A (NB09 §10-11):
+
+   python -m experiments.mrac.diagnostics --out results/mrac_scopeA_sigma_bias_wind_20261125/stabilized_none --variant stabilized --arms a0_online no_load_online --approval 'Javier, 2026-11-25: scope A, 34 episodes of 120 s at 6 kg / 2 m, ONLINE x 4 variants x (no wind, OU seeds 1-3) + sigma FROZEN no wind; OU mu=(5,-3,0.5) sigma=(2,1,0.2) tau_c=3 s; 1 worker; 60 min aggregate cap' --wall-cap 3600.0
+   python -m experiments.mrac.diagnostics --out results/mrac_scopeA_sigma_bias_wind_20261125/stabilized_sigma_none --variant stabilized_sigma --arms a0_frozen no_load_frozen a0_online no_load_online --approval 'Javier, 2026-11-25: scope A, 34 episodes of 120 s at 6 kg / 2 m, ONLINE x 4 variants x (no wind, OU seeds 1-3) + sigma FROZEN no wind; OU mu=(5,-3,0.5) sigma=(2,1,0.2) tau_c=3 s; 1 worker; 60 min aggregate cap' --wall-cap 3516.6
+   python -m experiments.mrac.diagnostics --out results/mrac_scopeA_sigma_bias_wind_20261125/stabilized_bias_none --variant stabilized_bias --arms a0_online no_load_online --approval 'Javier, 2026-11-25: scope A, 34 episodes of 120 s at 6 kg / 2 m, ONLINE x 4 variants x (no wind, OU seeds 1-3) + sigma FROZEN no wind; OU mu=(5,-3,0.5) sigma=(2,1,0.2) tau_c=3 s; 1 worker; 60 min aggregate cap' --wall-cap 3405.6
+   python -m experiments.mrac.diagnostics --out results/mrac_scopeA_sigma_bias_wind_20261125/stabilized_sigma_bias_none --variant stabilized_sigma_bias --arms a0_online no_load_online --approval 'Javier, 2026-11-25: scope A, 34 episodes of 120 s at 6 kg / 2 m, ONLINE x 4 variants x (no wind, OU seeds 1-3) + sigma FROZEN no wind; OU mu=(5,-3,0.5) sigma=(2,1,0.2) tau_c=3 s; 1 worker; 60 min aggregate cap' --wall-cap 3338.7
+   python -m experiments.mrac.diagnostics --out results/mrac_scopeA_sigma_bias_wind_20261125/stabilized_ou --variant stabilized --arms a0_online no_load_online --approval 'Javier, 2026-11-25: scope A, 34 episodes of 120 s at 6 kg / 2 m, ONLINE x 4 variants x (no wind, OU seeds 1-3) + sigma FROZEN no wind; OU mu=(5,-3,0.5) sigma=(2,1,0.2) tau_c=3 s; 1 worker; 60 min aggregate cap' --wall-cap 3288.9 --wind ou --wind-seed 1 --wind-seed 2 --wind-seed 3
+   python -m experiments.mrac.diagnostics --out results/mrac_scopeA_sigma_bias_wind_20261125/stabilized_sigma_ou --variant stabilized_sigma --arms a0_online no_load_online --approval 'Javier, 2026-11-25: scope A, 34 episodes of 120 s at 6 kg / 2 m, ONLINE x 4 variants x (no wind, OU seeds 1-3) + sigma FROZEN no wind; OU mu=(5,-3,0.5) sigma=(2,1,0.2) tau_c=3 s; 1 worker; 60 min aggregate cap' --wall-cap 3148.3 --wind ou --wind-seed 1 --wind-seed 2 --wind-seed 3
+   python -m experiments.mrac.diagnostics --out results/mrac_scopeA_sigma_bias_wind_20261125/stabilized_bias_ou --variant stabilized_bias --arms a0_online no_load_online --approval 'Javier, 2026-11-25: scope A, 34 episodes of 120 s at 6 kg / 2 m, ONLINE x 4 variants x (no wind, OU seeds 1-3) + sigma FROZEN no wind; OU mu=(5,-3,0.5) sigma=(2,1,0.2) tau_c=3 s; 1 worker; 60 min aggregate cap' --wall-cap 2997.9 --wind ou --wind-seed 1 --wind-seed 2 --wind-seed 3
+   python -m experiments.mrac.diagnostics --out results/mrac_scopeA_sigma_bias_wind_20261125/stabilized_sigma_bias_ou --variant stabilized_sigma_bias --arms a0_online no_load_online --approval 'Javier, 2026-11-25: scope A, 34 episodes of 120 s at 6 kg / 2 m, ONLINE x 4 variants x (no wind, OU seeds 1-3) + sigma FROZEN no wind; OU mu=(5,-3,0.5) sigma=(2,1,0.2) tau_c=3 s; 1 worker; 60 min aggregate cap' --wall-cap 2824.3 --wind ou --wind-seed 1 --wind-seed 2 --wind-seed 3
+
+**Not regenerable from tracked code.** These were produced by scripts that were never saved; only their outputs and hashes exist. Notebook cells that read them fail on a clean clone, which is stated in the cell:
+- `mrac_scopeA_sigma_bias_wind_20261125/scopeA_summary.json`, the aggregate table of NB09 §10. The per-run CSVs above regenerate; the aggregation script was not saved.
+- `mrac_stabilized_analysis_20261124/analysis.json`, the hover-grid and vertical-mode tables of NB09 §9. Partly reproducible with `experiments.mrac.diagnostics.hover_robustness_grid` and `hover_vertical_rate`.
+- `mrac_review_checks_20261125/review_checks.json`, the auditor checks R-1..R-3. The script was not saved; only its hash is recorded.

@@ -1,13 +1,13 @@
-# MRAC-RL slung-load notebooks (05-08): quick guide
+# MRAC-RL slung-load notebooks (05-10): quick guide
 
-These three notebooks are an **exploratory logbook**. Results are offline (a reduced Newton-Euler model of the quadrotor and a taut point load), run on the development PC (PROXY). They are not Pymunk results, not a stability proof and not a study.
+These notebooks are an **exploratory logbook**. Results are offline (a reduced Newton-Euler model of the quadrotor and a taut point load), run on the development PC (PROXY). They are not Pymunk results, not a stability proof and not a study.
 
 ## Where things live
 
 | What | Where |
 |---|---|
-| Notebooks, plotting and widget helpers | this repo, `main`: `05_*.ipynb` to `08_*.ipynb`, `mrac_lab/`, and the cached grids `results/s30_offline_grid.csv`, `results/vehicle_mismatch_grid.csv`, `results/arm3_a0_grid.csv` |
-| Physics, controllers, metrics (tested code) | thesis repo `gym-pymunk-quadrotor-suspended-load`, branch **`Claude`**, folder `experiments/mrac/` (`quad.py`, `quad_load_pend.py`, `law.py`, `payload_law.py`, `baselines.py`, `offline_metrics.py`, `payload_reference.py`) with tests in `tests/mrac/` |
+| Notebooks, plotting and widget helpers | this repo, `main`: `05_*.ipynb` to `10_*.ipynb`, `mrac_lab/` (including `vanilla_runs.py` and `vanilla_analysis.py`), and the cached grids `results/s30_offline_grid.csv`, `results/vehicle_mismatch_grid.csv`, `results/arm3_a0_grid.csv` |
+| Physics, controllers, metrics (tested code) | thesis repo `gym-pymunk-quadrotor-suspended-load`, branch **`Claude`**, folder `experiments/mrac/` (`quad.py`, `quad_load_pend.py`, `law.py`, `payload_law.py`, `baselines.py`, `offline_metrics.py`, `payload_reference.py`, `diagnostics.py`, `wind.py`, `vanilla_mrac.py`) with tests in `tests/mrac/` |
 | The mathematics | thesis repo `.ai/research/derivations/mrac-quadrotor-payload.md` (cited as "MQP §n" in the notebooks) |
 
 The notebooks import the thesis code from the main thesis checkout. That is the folder `...\Personal\thesis\gym-pymunk-quadrotor-suspended-load`, which must be on the `Claude` branch.
@@ -28,6 +28,8 @@ The notebooks import the thesis code from the main thesis checkout. That is the 
    | NB06 | about 1.5 min (it loads the cached grid; set `RECOMPUTE = True` only to rerun the 250 offline episodes, about 4 min on 6 cores) |
    | NB07 | about 1.5 min (loads the cached arm-3 grid) |
    | NB08 | under 1 min (loads the cached mismatch grid) |
+   | NB09 | under 1 min (reads saved A0 long-horizon, stabilization and wind results) |
+   | NB10 | about 1 min (vanilla MRAC: closed forms, the hover-Jacobian scan, saved validation and tuning results) |
 
    To regenerate a grid: `python -m mrac_lab.make_grid`, `python -m mrac_lab.make_mismatch_grid` or `python -m mrac_lab.make_a0_grid`, from this folder, with the `.venv-workspace` Python.
 
@@ -46,6 +48,8 @@ Command line alternative: `python -m jupyter nbconvert --to notebook --execute -
 | 5 | NB06 §4.4-4.5 | The non-minimum-phase zero from the attachment offset; oracle vs fixed form | zero 5.59 / 6.05 / 6.48 rad/s at 2 / 4 / 6 kg (`d = 0.38`); bandwidth rule NOT VERIFIED |
 | 6 | NB07 §10 | Arm 3 with the A0 nominal-payload reference (4 kg / 2 m, softer law inside the reference): ONLINE vs FROZEN (nominal ideals) vs arm 2 | exact identity at nominal; ONLINE 2-5x lower position error than FROZEN; beats arm 2 only for heavier loads; light-load estimate pins at 0; swing damping not inherited (the A0 blind spot `phi - phi_r`); length mismatch: A0 worse than arm 2 |
 | 7 | NB08 | Vehicle mismatch (mass, inertia, arm, motor asymmetry) for PID+FF and the swing laws | asymmetry hurts most (7.5x at 10 %), then vehicle mass (up to 3.3x); inertia and arm at most +4 %; swing laws keep reducing swing |
+| 8 | NB09 §8-10 | Why the A0 law fails at long horizon (C1 filter phase margin, C2 measured-swing cancellation, C3 lumped-mass mode) and the EQ-MR-18..21 ablations | PROPOSED, exploratory |
+| 9 | NB10 | Vanilla MRAC + linear damper in Guha notation (EQ-MR-22): matching proof, Lyapunov `V' = -e'Qe`, sampled-data hover check, validation, tuning | exact only on the linearized matched outer model; no stability claim for the nonlinear sampled loop |
 
 **Do not say:**
 - That the damper is stable up to `abs(kd) = 10` in the real or sampled loop.
@@ -55,6 +59,7 @@ Command line alternative: `python -m jupyter nbconvert --to notebook --execute -
 - That MRAC improves tracking in general (it helps only for some cells), or that it identifies the mass.
 - That the reference's swing damping carries over to the real load.
 - That the `Q` gate proves stability.
+- That the vanilla law's Lyapunov result covers the nonlinear sampled loop, or that its gains converge to the true parameters.
 
 ## Prepare now (about 15 minutes)
 

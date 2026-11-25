@@ -208,3 +208,6 @@ __marimo__/
 
 .vscode
 *.zip
+# Experiment outputs: regenerate with RESULTS_REGEN.md (Javier, 2026-11-25)
+results/mrac_*/
+results/smoke_*/
