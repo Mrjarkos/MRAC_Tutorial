@@ -60,7 +60,7 @@ def draw_vanilla_extensions(variant: str = "a", ax=None):
     D.arrow((8.7, 6.6), (9.8, 6.6), "$x_r$")
     D.arrow((7.2, 6.25), (3.6, 6.25), "", rad=0.25)
     # error and nominal force
-    D.sum(10.1, 6.6, ("+", "-"))
+    D.sum(10.1, 6.6, ("-", "+"))  # x_r enters from the left (-), x from below (+): e = x - x_r
     D.arrow((10.1, 5.4), (10.1, 6.44), "$x$", dx=0.25)
     D.arrow((10.26, 6.6), (11.2, 6.6), "$e=x-x_r$")
     D.block(12.2, 6.6, 1.6, 0.6, "$K_e^\\top$ (PD +\ndamper equiv.)", "law")

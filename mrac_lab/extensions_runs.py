@@ -297,6 +297,7 @@ def main() -> None:
     ap.add_argument("--wall-cap", type=float, default=4 * 3600.0)
     ap.add_argument("--thesis-root", default=None)
     ap.add_argument("--only", default=None, help="comma-separated job tags (grid,dist,long,robust)")
+    ap.add_argument("--ids-file", default=None, help="JSON list of job ids to run (completion part)")
     args = ap.parse_args()
 
     from mrac_lab import provenance
@@ -305,6 +306,9 @@ def main() -> None:
     jobs = jobs_for(args.stage)
     if args.only:
         jobs = [j for j in jobs if j["tag"] in args.only.split(",")]
+    if args.ids_file:
+        keep = set(json.loads(Path(args.ids_file).read_text()))
+        jobs = [j for j in jobs if j["id"] in keep]
     ids = [j["id"] for j in jobs]
     if len(ids) != len(set(ids)):
         raise SystemExit("duplicate job ids")
@@ -328,7 +332,11 @@ def main() -> None:
     try:
         pre = preflight(args.stage)
         receipt["preflight"] = pre
-        bad = {k: v for k, v in pre.items() if not (math.isfinite(v["rate_per_s"]) and v["rate_per_s"] < 0)}
+        # protocol 08 AM1 threshold -0.05/s, invariance and drift tolerances (Codex 27 EXT-06);
+        # sigma designs are certified through their sigma = 0 counterpart (AM4)
+        bad = {k: v for k, v in pre.items()
+               if not (math.isfinite(v["rate_per_s"]) and v["rate_per_s"] <= -0.05
+                       and v["invariance"] < 1e-6 and v["drift"] < 1e-9)}
         receipt["preflight_failures"] = bad
         receipt["status"] = "running"
         _write(out / "receipt.json", receipt)

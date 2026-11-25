@@ -36,14 +36,22 @@ def main() -> None:
     if missing or set(final) - set(ids):
         raise SystemExit(f"incomplete composite: missing {missing[:5]} ({len(missing)}), extra {sorted(set(final) - set(ids))[:5]}")
     stage = receipts[0]["stage"]
-    out = ROOT / "results" / f"mrac_vanilla_{stage}_composite_{time.strftime('%Y%m%dT%H%M%S')}"
+    prefix = parts[0].name.rsplit("_", 1)[0]  # e.g. mrac_vanilla_heldout, mrac_ext_abc
+    out = ROOT / "results" / f"{prefix}_composite_{time.strftime('%Y%m%dT%H%M%S')}"
     out.mkdir(parents=True, exist_ok=False)
     with open(out / "jobs.json", "x") as fh:
         json.dump(manifest, fh, indent=1)
     with open(out / "summary.json", "x") as fh:
         json.dump([final[i] for i in ids], fh, indent=1, default=str)
-    receipt = {"stage": stage, "status": "completed", "composite_of": receipts,
-               "rule": "protocol 06 AM7: cancelled_wall_cap results replaced by the completion run",
+    import hashlib
+
+    def sha(path):
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+    hashes = {"combine_source": sha(__file__), "manifest": sha(sys.argv[1]),
+              **{f"part:{p.name}/summary.json": sha(p / "summary.json") for p in parts}}
+    receipt = {"stage": stage, "status": "completed", "composite_of": receipts, "sha256": hashes,
+               "rule": "union of parts; a cancelled or not-run job is taken from the later completion part (protocol 06 AM7, protocol 08 AM3)",
                "excluded_designs": [], "excluded_jobs": []}
     with open(out / "receipt.json", "x") as fh:
         json.dump(receipt, fh, indent=1, default=str)

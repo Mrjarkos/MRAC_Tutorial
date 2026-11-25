@@ -30,6 +30,8 @@ def load_summaries(folders) -> pd.DataFrame:
         f = Path(f)
         df = pd.DataFrame(json.loads((f / "summary.json").read_text()))
         df["folder"] = str(f)
+        if "source_folder" in df:  # composite: CSVs live in the part folders
+            df["folder"] = [str(f.parent / sf) if isinstance(sf, str) else str(f) for sf in df.source_folder]
         frames.append(df)
     df = pd.concat(frames, ignore_index=True)
     # shared arms (TUNED', baselines) appear only in stage a; keep one copy per id

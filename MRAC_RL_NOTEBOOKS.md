@@ -1,4 +1,4 @@
-# MRAC-RL slung-load notebooks (05-10): quick guide
+# MRAC-RL slung-load notebooks (05-13): quick guide
 
 These notebooks are an **exploratory logbook**. Results are offline (a reduced Newton-Euler model of the quadrotor and a taut point load), run on the development PC (PROXY). They are not Pymunk results, not a stability proof and not a study.
 
@@ -30,6 +30,7 @@ The notebooks import the thesis code from the main thesis checkout. That is the 
    | NB08 | under 1 min (loads the cached mismatch grid) |
    | NB09 | under 1 min (reads saved A0 long-horizon, stabilization and wind results) |
    | NB10 | about 1 min (vanilla MRAC: closed forms, the hover-Jacobian scan, saved validation and tuning results) |
+   | NB11-NB13 | about 1-2 min each (extension series a / a+b / a+b+c: derivation, block diagram, cached protocol-08 grids; interactive panels; the live panel runs one episode only when its button is pressed) |
 
    To regenerate a grid: `python -m mrac_lab.make_grid`, `python -m mrac_lab.make_mismatch_grid` or `python -m mrac_lab.make_a0_grid`, from this folder, with the `.venv-workspace` Python.
 
@@ -50,6 +51,7 @@ Command line alternative: `python -m jupyter nbconvert --to notebook --execute -
 | 7 | NB08 | Vehicle mismatch (mass, inertia, arm, motor asymmetry) for PID+FF and the swing laws | asymmetry hurts most (7.5x at 10 %), then vehicle mass (up to 3.3x); inertia and arm at most +4 %; swing laws keep reducing swing |
 | 8 | NB09 §8-10 | Why the A0 law fails at long horizon (C1 filter phase margin, C2 measured-swing cancellation, C3 lumped-mass mode) and the EQ-MR-18..21 ablations | PROPOSED, exploratory |
 | 9 | NB10 | Vanilla MRAC + linear damper in Guha notation (EQ-MR-22): matching proof, Lyapunov `V' = -e'Qe`, sampled-data hover check, validation, tuning | exact only on the linearized matched outer model; no stability claim for the nonlinear sampled loop |
+| 10 | NB11-NB13 | Extensions at `d = 0`: (a) nonlinear model in the cable frame (EQ-MR-23), (b) RBF disturbance weights, (c) σ-modification; vehicle-mismatch grid, wind, drag, gusts, payload and vehicle kicks, 600 s holds; which statement improves which | the derivative identity is proved; local convergence is conditional; protocol 08 is descriptive |
 
 **Do not say:**
 - That the damper is stable up to `abs(kd) = 10` in the real or sampled loop.
