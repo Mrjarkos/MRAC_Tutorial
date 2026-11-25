@@ -81,3 +81,12 @@ def test_heldout_counts_only_comparable_cells_and_lists_both_directions(tmp_path
     assert "m5.5_L2_q1_hover" not in res["tuned_beats_frozen"]
     assert len(res["v0_beats_tuned"]) == 3 and res["tuned_beats_v0"] == []
     assert [r["cell"] for r in res["length_cells_unmatched_readout"]] == ["m4_L1.5_q1_hover"]
+
+
+def test_g3_floor_admits_small_absolute_swing():
+    base_cell = {"softer": {"swing_rms_10_30": 0.0001}, "pidff": {"swing_rms_10_30": 0.0005}}
+    r = {**GOOD, "swing_rms_10_30": 0.004}  # B_S = 0.0003 rad, like 6 kg hover
+    assert A.gates(r, base_cell, floor=0.0)["G3"] is False
+    g = A.gates(r, base_cell, floor=0.005)
+    assert g["G3"] is True and g["B_S"] == 0.005
+    assert A.gates({**r, "swing_rms_10_30": 0.006}, base_cell, floor=0.005)["G3"] is False

@@ -19,6 +19,8 @@ All commands use the thesis interpreter `..\..\thesis\gym-pymunk-quadrotor-suspe
 | NB10 §7 | `mrac_vanilla_validation_*` | `python -m mrac_lab.vanilla_runs --stage validation --workers 6 --wall-cap 3600` | about 24 min |
 | NB10 §8 | `mrac_vanilla_tune_*` | `python -m mrac_lab.vanilla_runs --stage tune --workers 6 --wall-cap 5400 --jobs-file mrac_lab/jobs/t1_tune_am3.json`, then `python -m mrac_lab.vanilla_analysis tune <folder>` | about 55 min |
 | NB10 §8 | `mrac_vanilla_heldout_*` | `python -m mrac_lab.vanilla_runs --stage heldout --workers 6 --wall-cap 2400 --jobs-file mrac_lab/jobs/t2_heldout.json`, then `python -m mrac_lab.vanilla_analysis heldout <folder>` | about 17 min |
+| NB10 §8 (T1') | `mrac_vanilla_tune_20261125T024907/analysis_t1prime.json` | `python -m mrac_lab.vanilla_analysis tune <T1 folder> --g3-floor 0.005 --name analysis_t1prime` | seconds |
+| NB10 §8 (T2') | `mrac_vanilla_heldout_composite_*` | `python -m mrac_lab.vanilla_runs --stage heldout --workers 6 --wall-cap 3900 --jobs-file mrac_lab/jobs/t2prime_heldout.json` (one run normally suffices; the original run needed a completion part, `t2prime_heldout_part2.json`, combined with `python -m mrac_lab.vanilla_combine mrac_lab/jobs/t2prime_heldout.json <part1> <part2>`), then `python -m mrac_lab.vanilla_analysis heldout <folder> --g3-floor 0.005 --name analysis_t2prime` | about 15-40 min |
 
 Scope A (NB09 §10-11):
 

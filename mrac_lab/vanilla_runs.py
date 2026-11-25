@@ -299,9 +299,13 @@ HELDOUT_PLANTS = [(2.5, 2.0, 1.0), (5.5, 2.0, 1.0), (4.0, 1.5, 1.0), (4.0, 2.5, 
                   (6.0, 2.5, 1.0), (2.0, 1.5, 1.0), (4.0, 2.0, 1.2)]
 
 
-def heldout_jobs(tuned: dict) -> list[dict]:
+# Protocol 06 (T2'): the T2 plants plus four never-run conditions.
+UNSEEN_T2P = [(3.0, 2.0, 1.0), (5.0, 2.0, 1.0), (4.0, 1.75, 1.0), (4.0, 2.0, 0.85)]
+
+
+def heldout_jobs(tuned: dict, plants=None) -> list[dict]:
     jobs = []
-    for mL, L, sq in HELDOUT_PLANTS:
+    for mL, L, sq in plants or HELDOUT_PLANTS:
         for sc in ("hover", "transfer", "transfer_fast"):
             base = {"kind": "nonlinear", "m_L": mL, "L": L, "m_q_scale": sq, "scenario": sc, "seconds": 120.0}
             cell = f"m{mL:g}_L{L:g}_q{sq:g}_{sc}"
@@ -377,12 +381,14 @@ def main() -> None:
     ap.add_argument("--thesis-root", default=None)
     ap.add_argument("--make-jobs", default=None, help="write the stage's job list to this file and exit")
     ap.add_argument("--tuned", default=None, help="JSON design for the heldout stage")
+    ap.add_argument("--t2prime", action="store_true", help="protocol 06 plant set (T2 + unseen)")
     args = ap.parse_args()
     if args.make_jobs:
         if args.stage == "tune":
             jobs = tune_jobs()
         elif args.stage == "heldout":
-            jobs = heldout_jobs(json.loads(args.tuned))
+            plants = HELDOUT_PLANTS + UNSEEN_T2P if args.t2prime else None
+            jobs = heldout_jobs(json.loads(args.tuned), plants)
         else:
             jobs = validation_jobs()
         with open(args.make_jobs, "x") as fh:  # F12: never overwrite a manifest

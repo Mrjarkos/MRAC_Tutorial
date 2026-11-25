@@ -67,7 +67,10 @@ def swing_bound(base_cell: dict) -> tuple[float, bool]:
     return soft + 0.5 * max(pid - soft, 0.0), pid > soft
 
 
-def gates(r: dict, base_cell: dict) -> dict:
+G3_FLOOR = 0.0  # protocol 03; protocol 06 (T1'/T2') sets 0.005 rad via --g3-floor
+
+
+def gates(r: dict, base_cell: dict, floor: float | None = None) -> dict:
     ok = r.get("status") == "completed"
     g1 = (ok and _finite(r.get("sat_frac")) and r["sat_frac"] <= 0.01
           and _finite(r.get("f_c_min")) and r["f_c_min"] >= 0.0
@@ -78,6 +81,7 @@ def gates(r: dict, base_cell: dict) -> dict:
     if base_cell.get("unevaluable"):
         return {"G1": bool(g1), "G2": bool(g2), "G3": None, "B_S": float("nan"), "damper_benefit": None}
     bs, benefit = swing_bound(base_cell)
+    bs = max(bs, G3_FLOOR if floor is None else floor)
     g3 = ok and _finite(r.get("swing_rms_10_30")) and r["swing_rms_10_30"] <= bs
     return {"G1": bool(g1), "G2": bool(g2), "G3": bool(g3), "B_S": bs, "damper_benefit": bool(benefit)}
 
@@ -191,9 +195,20 @@ def analyze_heldout(folder: Path) -> dict:
 
 
 def main() -> None:
-    stage, folder = sys.argv[1], Path(sys.argv[2])
-    target = folder / "analysis.json"
+    import argparse
+
+    global G3_FLOOR
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("stage", choices=["tune", "heldout"])
+    ap.add_argument("folder", type=Path)
+    ap.add_argument("--g3-floor", type=float, default=0.0, help="absolute swing floor (rad), protocol 06")
+    ap.add_argument("--name", default="analysis", help="output file stem (never overwritten)")
+    args = ap.parse_args()
+    G3_FLOOR = args.g3_floor
+    stage, folder = args.stage, args.folder
+    target = folder / f"{args.name}.json"
     res = analyze_tune(folder) if stage == "tune" else analyze_heldout(folder)
+    res["g3_floor_rad"] = G3_FLOOR
     with open(target, "x") as fh:  # never overwrite
         json.dump(res, fh, indent=1, default=str)
     skip = ("all_designs", "cells", "top10", "baseline_swing_bounds", "length_cells_unmatched_readout")
