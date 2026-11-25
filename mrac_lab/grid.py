@@ -160,7 +160,7 @@ def save_csv(df: pd.DataFrame, path, prov, canon, workers: int, seconds: float) 
     lines = [
         "EXPLORATORY / offline / PROXY: offline S30-style grid, one deterministic run per cell",
         f"created: {datetime.datetime.now().isoformat(timespec='seconds')}  workers={workers}  wall_s={seconds:.0f}",
-        f"thesis_commit: {prov.commit}  branch: {prov.branch}  dirty: {prov.dirty}",
+        f"thesis_commit: {prov.commit}  branch: {prov.branch}  dirty: {prov.dirty} {list(prov.dirty_paths)}",
         f"thesis_root: {prov.root}",
         f"timing: T_s={canon.timing.T_s} N={canon.timing.N} sim_dt={canon.sim_dt}",
         f"vehicle: m={canon.quad.m} J={canon.quad.J} a_p={canon.quad.a_p} T_max={canon.quad.T_max} tau_m={canon.quad.tau_m} d={canon.payload.d}",

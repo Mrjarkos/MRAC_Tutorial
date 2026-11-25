@@ -32,6 +32,10 @@ DEFAULT_THESIS_ROOT = Path(
 )
 ENV_VAR = "MRAC_THESIS_ROOT"
 
+#: Paths whose uncommitted state can change notebook results (2026-11-25: scoped to the
+#: imported code; unrelated files elsewhere under ``experiments/`` no longer mark a run dirty).
+DIRTY_SCOPE = ("experiments/mrac", "experiments/notebook_utils/style.py", "gym_pymunk_quadrotor")
+
 #: Label printed on every notebook. Offline results are PROXY results.
 LABEL = "EXPLORATORY / offline / PROXY (development PC, reduced taut point-load model)"
 CLAIM_LIMITS = (
@@ -50,6 +54,7 @@ class Provenance:
     dirty: bool
     python: str
     origins: Mapping[str, str] = field(default_factory=dict)
+    dirty_paths: Sequence[str] = ()
 
     @property
     def short_commit(self) -> str:
@@ -113,8 +118,12 @@ def setup(
 
     commit = _git(root, "rev-parse", "HEAD") or "UNKNOWN"
     branch = _git(root, "rev-parse", "--abbrev-ref", "HEAD") or "UNKNOWN"
-    dirty = bool(_git(root, "status", "--porcelain", "--", "experiments", "gym_pymunk_quadrotor"))
-    prov = Provenance(root, commit, branch, dirty, sys.version.split()[0], origins)
+    status = _git(root, "status", "--porcelain", "--", *DIRTY_SCOPE)
+    # porcelain lines are "XY path"; _git strips the leading space of the first line
+    dirty_paths = tuple(line.split(None, 1)[1] for line in status.splitlines() if line.strip())
+    prov = Provenance(
+        root, commit, branch, bool(dirty_paths), sys.version.split()[0], origins, dirty_paths
+    )
     if pinned_commit and not commit.startswith(pinned_commit):
         print(
             f"WARNING: checkout is at {commit[:7]}, notebook was written against "
@@ -135,7 +144,7 @@ def banner(
         f"Label: {LABEL}",
         f"Thesis checkout: {prov.root}",
         f"Commit: {prov.commit} (branch {prov.branch}"
-        + (", WORKING TREE HAS UNCOMMITTED CHANGES under experiments/ or gym_pymunk_quadrotor/" if prov.dirty else ", clean for experiments/ and gym_pymunk_quadrotor/")
+        + (", UNCOMMITTED CHANGES in " + ", ".join(prov.dirty_paths) if prov.dirty else ", clean for " + ", ".join(DIRTY_SCOPE))
         + ")",
         f"Python: {prov.python}",
         f"Claim limits: {CLAIM_LIMITS}",
