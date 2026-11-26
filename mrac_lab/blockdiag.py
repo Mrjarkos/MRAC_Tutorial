@@ -79,7 +79,9 @@ def draw_vanilla_extensions(variant: str = "a", ax=None):
     D.sum(xc, top, [("+", 0.3, 0.32), ("-", -0.32, -0.28)])  # u_r from above (+), K_e^T e from the left (-)
     D.wire([(13.27, top), (xc - R_SUM, top)], "$K_e^\\top e$", at=(13.64, top + 0.07))
     D.dot(5.45, top)
-    D.wire([(5.45, top), (5.45, 8.5), (xc, 8.5), (xc, top + R_SUM)], "$u_r + M_r g\\,e_2$", at=(9.8, 8.56))
+    # vanilla: xi = u_r - K_e^T e; nonlinear variants: F_n = u_r + M_r g e_2 - K_e^T e
+    D.wire([(5.45, top), (5.45, 8.5), (xc, 8.5), (xc, top + R_SUM)], "$u_r + M_r g\\,e_2$" if nl else "$u_r$",
+           at=(9.8, 8.56))
     # command path
     if nl:
         D.block(xc, 5.95, 3.2, 1.0, "cable frame $R(\\varphi)=[\\hat t\\ \\hat q]$\n$\\xi_t=\\hat t^\\top F_n$,  $\\xi_u=\\hat q^\\top F_n+m_{b,r}\\ell\\dot\\varphi^2$", "law", fs=9)
@@ -96,7 +98,8 @@ def draw_vanilla_extensions(variant: str = "a", ax=None):
     D.block(9.5, mid, 4.6, 1.5,
             ("$\\dot{\\hat k}=-\\gamma\\,\\mathrm{reg}\\,(e^\\top P B_e(\\varphi))_{ch}$" if nl else
              "$\\dot{\\hat K}_x=-\\Gamma_x\\odot(\\bar x e^\\top P B_r)$\n$\\dot{\\hat K}_u=-\\Gamma_u\\odot(\\xi e^\\top P B_r)$")
-            + "\n$-\\sigma(\\hat k-k_0)$,  $-\\sigma_W\\hat W$  (c)", "adapt", text_dy=0.0 if c else 0.14)
+            + ("\n$-\\sigma(\\hat k-k_0)$,  $-\\sigma_W\\hat W$  (c)" if c else ""),  # leak terms exist only in (c)
+            "adapt", text_dy=0.0 if c else 0.14)
     ax.text(9.5, 3.28, "projection on boxes; $PA_H+A_H^\\top P=-Q$", ha="center", va="top", fontsize=9)
     D.wire([(11.82, mid), (xc - 1.62, mid)], "gains", at=(12.2, mid + 0.07))
     D.dot(11.15, top)
@@ -117,7 +120,7 @@ def draw_vanilla_extensions(variant: str = "a", ax=None):
            "$x=[y_q, v_{q,y}, z_q, v_{q,z}, \\varphi, \\dot\\varphi]$", at=(0.6, 3.7), ha="left", va="center")
     ax.text(10.33, 6.6, "$x$", ha="left", va="center", fontsize=FS, color="navy")
     title = {"vanilla": "Vanilla MRAC (EQ-MR-22): linear outer model", "a": "(a) nonlinear-model MRAC (EQ-MR-23)",
-             "ab": "(a)+(b) + disturbance weights", "abc": "(a)+(b)+(c) + σ-modification"}[variant]
+             "ab": "(a)+(b) + disturbance weights", "abc": "(a)+(b)+(c): disturbance weights + σ-modification"}[variant]
     ax.set_title(title + "   (signs at Σ; dashed = off)", fontsize=12)
     return ax
 
