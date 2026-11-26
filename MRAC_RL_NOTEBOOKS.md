@@ -15,13 +15,15 @@ NB01-NB04 are generic MRAC tutorials (theory). NB05-NB13 are an **exploratory lo
 | NB04 RL and MRAC | How does the MRAC-RL framework (Guha and Annaswamy) use an RL policy's closed loop as the reference model? | NB02, NB03 |
 | NB05 Slung-load model validation | What is the taut point-load model, and does it pass its checks? ($d = 0.3795$ m, code angle) | NB00 |
 | NB06 Baselines | PID+FF (arm 1), linear damper (arm 2), the torque-to-swing zero pair | NB05 |
-| NB07 Arm 3 | The A0 / B3 route-(b) adaptive law | NB06 |
 | NB08 Vehicle mismatch grid | How much do vehicle parameter errors hurt arms 1 and 2? | NB06 |
+| NB07 Arm 3 | The A0 / B3 route-(b) adaptive law | NB06 |
 | NB09 Nominal-load reference | A0 with the nominal-payload reference; long-horizon issues | NB07 |
 | NB10 Vanilla MRAC (Guha) | The Guha-Annaswamy pattern on the hover-linearised outer model ($d = 0$) | NB04, NB05 |
 | NB11 Extension (a) | Nonlinear taut model in cable-frame channels | NB10 |
 | NB12 Extension (a)+(b) | Disturbance-estimator weights | NB11 |
 | NB13 Extension (a)+(b)+(c) | $\sigma$ leak | NB12 |
+
+The table is in reading order. In the logbook branch, NB05, NB06, NB08 and NB07 are steps 1 to 4 and NB09 follows NB07: NB08 comes before NB07 because it was added after the 2026-11-24 meeting as step 3 of 4.
 
 ## What "MQP" means
 
@@ -73,8 +75,8 @@ Command line alternative: `python -m jupyter nbconvert --to notebook --execute -
 | 3 | NB06 (b) | Linear-damper derivation: damper only in the attitude row; `N(s)` has no controller gain; zero pair `+-sqrt(g(m+m_L)/(d m))`, about 6 rad/s, from the **offset attachment** | least-damped `zeta`: PID+FF 0.158, softer law 0.244, damper 0.378, peak 0.419 at `kd` about -1.7; not monotone; continuous-time limit near `abs(kd)` 10 (also exists at `d = 0`) |
 | 4 | NB06 (c-d) | Arm 2 and the offline S30 grid heatmaps | 25 conditions, 5 controllers, 250 runs, 0 failures; ratios vs true-mass PID+FF; only the softer law with true-mass FF is like-for-like with S30 |
 | 5 | NB06 §4.4-4.5 | The non-minimum-phase zero from the attachment offset; oracle vs fixed form | zero 5.59 / 6.05 / 6.48 rad/s at 2 / 4 / 6 kg (`d = 0.38`); bandwidth rule NOT VERIFIED |
-| 6 | NB07 §10 | Arm 3 with the A0 nominal-payload reference (4 kg / 2 m, softer law inside the reference): ONLINE vs FROZEN (nominal ideals) vs arm 2 | exact identity at nominal; ONLINE 2-5x lower position error than FROZEN; beats arm 2 only for heavier loads; light-load estimate pins at 0; swing damping not inherited (the A0 blind spot `phi - phi_r`); length mismatch: A0 worse than arm 2 |
-| 7 | NB08 | Vehicle mismatch (mass, inertia, arm, motor asymmetry) for PID+FF and the swing laws | asymmetry hurts most (7.5x at 10 %), then vehicle mass (up to 3.3x); inertia and arm at most +4 %; swing laws keep reducing swing |
+| 6 | NB08 | Vehicle mismatch (mass, inertia, arm, motor asymmetry) for PID+FF and the swing laws | asymmetry hurts most (7.5x at 10 %), then vehicle mass (up to 3.3x); inertia and arm at most +4 %; swing laws keep reducing swing |
+| 7 | NB07 §10 | Arm 3 with the A0 nominal-payload reference (4 kg / 2 m, softer law inside the reference): ONLINE vs FROZEN (nominal ideals) vs arm 2 | exact identity at nominal; ONLINE 2-5x lower position error than FROZEN; beats arm 2 only for heavier loads; light-load estimate pins at 0; swing damping not inherited (the A0 blind spot `phi - phi_r`); length mismatch: A0 worse than arm 2 |
 | 8 | NB09 §8-10 | Why the A0 law fails at long horizon (C1 filter phase margin, C2 measured-swing cancellation, C3 lumped-mass mode) and the EQ-MR-18..21 ablations | PROPOSED, exploratory |
 | 9 | NB10 | Vanilla MRAC + linear damper in Guha notation (EQ-MR-22): matching proof, Lyapunov `V' = -e'Qe`, sampled-data hover check, validation, tuning | exact only on the linearized matched outer model; no stability claim for the nonlinear sampled loop |
 | 10 | NB11-NB13 | Extensions at `d = 0`: (a) nonlinear model in the cable frame (EQ-MR-23), (b) RBF disturbance weights, (c) σ-modification; vehicle-mismatch grid, wind, drag, gusts, payload and vehicle kicks, 600 s holds; which statement improves which | the derivative identity is proved; local convergence is conditional; protocol 08 is descriptive |
