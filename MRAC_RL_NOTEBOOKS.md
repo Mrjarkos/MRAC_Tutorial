@@ -18,7 +18,7 @@ NB01-NB04 are generic MRAC tutorials (theory). NB05-NB13 are an **exploratory lo
 | NB08 Vehicle mismatch grid | How much do vehicle parameter errors hurt arms 1 and 2? | NB06 |
 | NB07 Arm 3 | The A0 / B3 route-(b) adaptive law | NB06 |
 | NB09 Nominal-load reference | A0 with the nominal-payload reference; long-horizon issues | NB07 |
-| NB10 Vanilla MRAC (Guha) | The Guha-Annaswamy pattern on the hover-linearised outer model ($d = 0$) | NB04, NB05 |
+| NB10 Vanilla MRAC (Guha) | The Guha-Annaswamy pattern on the hover-linearised outer model (derivations at $d = 0$; the hover check and the runs of its sections 5, 7 and 8 at $d = 0.3795$ m) | NB04, NB05 |
 | NB11 Extension (a) | Nonlinear taut model in cable-frame channels | NB10 |
 | NB12 Extension (a)+(b) | Disturbance-estimator weights | NB11 |
 | NB13 Extension (a)+(b)+(c) | $\sigma$ leak | NB12 |
@@ -47,7 +47,7 @@ The notebooks import the thesis code from the main thesis checkout. That is the 
 
 1. Open this folder in VS Code.
 2. Open a notebook and select the kernel **Python (`.venv-workspace`)**, the interpreter at `...\thesis\gym-pymunk-quadrotor-suspended-load\.venv-workspace\Scripts\python.exe`. Not this repo's `.venv`: it lacks sympy and pandas.
-3. Run All. Approximate times:
+3. Run All. Exception: section 11 of NB07 asks not to execute that whole notebook without approval, because its interactive sections launch short offline episodes. Approximate times:
 
    | Notebook | Time |
    |---|---|
@@ -60,7 +60,7 @@ The notebooks import the thesis code from the main thesis checkout. That is the 
    | NB10 | about 1 min (vanilla MRAC: closed forms, the hover-Jacobian scan, saved validation and tuning results) |
    | NB11-NB13 | about 1-2 min each (extension series a / a+b / a+b+c: derivation, block diagram, cached protocol-08 grids; interactive panels; the live panel runs one episode only when its button is pressed) |
 
-   To regenerate a grid: `python -m mrac_lab.make_grid`, `python -m mrac_lab.make_mismatch_grid` or `python -m mrac_lab.make_a0_grid`, from this folder, with the `.venv-workspace` Python.
+   To regenerate a grid: `python -m mrac_lab.make_grid`, `python -m mrac_lab.make_mismatch_grid` or `python -m mrac_lab.make_a0_grid`, from this folder, with the `.venv-workspace` Python. By default each command writes over the cached CSV of the same name, which is tracked historical evidence: run it only when that run is approved, and give `--out` a new path.
 
 4. The interactive panels (sliders and dropdowns) redraw inline figures. Change a value and wait for the redraw.
 
@@ -93,12 +93,13 @@ Command line alternative: `python -m jupyter nbconvert --to notebook --execute -
 
 ## Prepare now (about 15 minutes)
 
-1. Run all three notebooks once with the kernel above and check that the banner shows branch `Claude`.
+1. Open the notebooks you will show (the table above names them, NB05 to NB13). Their saved outputs can be read without running; if you do run one, use the kernel above, note the NB07 exception under "How to launch", and check that the banner shows branch `Claude`.
 2. In NB06, read §4 (derivation) and §8 (interpretation); move the sliders once.
-3. In NB07, read §4.5 (open obligations, including obligation 6) and §8.
-4. Optional reading in the thesis repo: `.ai/work/2026-11-24-mrac-notebooks/05_meeting_brief.md` (talking points) and `04_notebook_math_check.md` (independent check of the mathematics).
+3. In NB07, read §4.5 (derivation obligations and their present status), §10.1a and §10.8 to §10.9. §8 interprets the superseded preliminary run.
+4. Optional reading in the thesis repo: `.ai/work/2026-11-24-mrac-notebooks/05_meeting_brief.md` (talking points; local, untracked, and its arm-3 text is marked superseded) and `04_notebook_math_check.md` (local, untracked; a mathematics check of NB05 to NB07 as of 2026-11-24 by a reviewer that was not the author but the same vendor; it does not cover later text).
 
 ## Extending the work
 
 - **Code:** new physics, controllers or metrics go into the thesis repo's `experiments/mrac/`, with tests, on `Claude` (one commit on top, or a short branch fast-forwarded into `Claude`).
-- **Notebooks:** new notebooks go here, numbered 08 onward, importing that code. Keep each notebook's sections: question, hypotheses, provenance, theory, exploration, observations, table, interpretation, next steps.
+- **Notebooks:** new notebooks go here, numbered 14 onward (00 to 13 exist), importing that code. Keep each notebook's sections: question, hypotheses, provenance, theory, exploration, observations, table, interpretation, next steps.
+- **Next, residual policy:** Combining MRAC with a residual policy is planned for evaluation on the Pymunk plant, with no observation adapter (project master plan, item A6; a local planning document). Offline MRAC with the damper reference remains the theory and tuning vehicle. Nothing of that combination has been run.
