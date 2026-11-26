@@ -1,14 +1,39 @@
-# MRAC-RL slung-load notebooks (05-13): quick guide
+# MRAC tutorial and slung-load notebooks (00-13): quick guide
 
-These notebooks are an **exploratory logbook**. Results are offline (a reduced Newton-Euler model of the quadrotor and a taut point load), run on the development PC (PROXY). They are not Pymunk results, not a stability proof and not a study.
+NB01-NB04 are generic MRAC tutorials (theory). NB05-NB13 are an **exploratory logbook**. Their results are offline (a reduced Newton-Euler model of the quadrotor and a taut point load), run on the development PC (PROXY). They are not Pymunk results, not a stability proof and not a study.
+
+**Start with NB00** (`00_Notation_and_Reading_Guide.ipynb`): it holds the glossary of every abbreviation used in the series (MQP, EQ-MR-xx, A0, B3, route (b), W1 to W2e, arms 1 to 3, PE, UUB and others), the notation map between thesis `residual.tex`, the simulator code and the Guha-Annaswamy paper, and one complete scalar MRAC derivation that the other notebooks follow.
+
+## Reading order
+
+| Notebook | Question | Needs first |
+|---|---|---|
+| NB00 Notation and reading guide | What do the symbols and abbreviations mean? | nothing |
+| NB01 Introduction to MRAC | How can gains adapt online so a plant with unknown parameters follows a reference model (MIT rule)? | NB00 |
+| NB02 MRAC meets Lyapunov | How does a Lyapunov function replace the MIT rule, with a matched disturbance and a chosen basis? | NB01 |
+| NB03 Lyapunov, general system | The same for vectors and matrices, with unknown control effectiveness | NB02 |
+| NB04 RL and MRAC | How does the MRAC-RL framework (Guha and Annaswamy) use an RL policy's closed loop as the reference model? | NB02, NB03 |
+| NB05 Slung-load model validation | What is the taut point-load model, and does it pass its checks? ($d = 0.3795$ m, code angle) | NB00 |
+| NB06 Baselines | PID+FF (arm 1), linear damper (arm 2), the torque-to-swing zero pair | NB05 |
+| NB07 Arm 3 | The A0 / B3 route-(b) adaptive law | NB06 |
+| NB08 Vehicle mismatch grid | How much do vehicle parameter errors hurt arms 1 and 2? | NB06 |
+| NB09 Nominal-load reference | A0 with the nominal-payload reference; long-horizon issues | NB07 |
+| NB10 Vanilla MRAC (Guha) | The Guha-Annaswamy pattern on the hover-linearised outer model ($d = 0$) | NB04, NB05 |
+| NB11 Extension (a) | Nonlinear taut model in cable-frame channels | NB10 |
+| NB12 Extension (a)+(b) | Disturbance-estimator weights | NB11 |
+| NB13 Extension (a)+(b)+(c) | $\sigma$ leak | NB12 |
+
+## What "MQP" means
+
+**MQP** is the short name of the thesis derivation note *MRAC for a planar quadrotor with a cable-suspended payload* (**M**RAC, **Q**uadrotor, **P**ayload): the file `.ai/research/derivations/mrac-quadrotor-payload.md` in the thesis repository. Its status is **PROPOSED**: it is not accepted. "MQP §6.14" means section 6.14 of that file. The notebooks cite it as the reference source and carry the key steps themselves, so a reader does not need the file. The thesis equation registry rows "EQ-MR-xx" point to it.
 
 ## Where things live
 
 | What | Where |
 |---|---|
-| Notebooks, plotting and widget helpers | this repo, `main`: `05_*.ipynb` to `10_*.ipynb`, `mrac_lab/` (including `vanilla_runs.py` and `vanilla_analysis.py`), and the cached grids `results/s30_offline_grid.csv`, `results/vehicle_mismatch_grid.csv`, `results/arm3_a0_grid.csv` |
+| Notebooks, plotting and widget helpers | this repo, `main`: `00_*.ipynb` to `13_*.ipynb`, `mrac_lab/` (including `vanilla_runs.py` and `vanilla_analysis.py`), and the cached grids `results/s30_offline_grid.csv`, `results/vehicle_mismatch_grid.csv`, `results/arm3_a0_grid.csv` |
 | Physics, controllers, metrics (tested code) | thesis repo `gym-pymunk-quadrotor-suspended-load`, branch **`Claude`**, folder `experiments/mrac/` (`quad.py`, `quad_load_pend.py`, `law.py`, `payload_law.py`, `baselines.py`, `offline_metrics.py`, `payload_reference.py`, `diagnostics.py`, `wind.py`, `vanilla_mrac.py`) with tests in `tests/mrac/` |
-| The mathematics | thesis repo `.ai/research/derivations/mrac-quadrotor-payload.md` (cited as "MQP §n" in the notebooks) |
+| The mathematics | thesis repo `.ai/research/derivations/mrac-quadrotor-payload.md` = **MQP**, the derivation note *MRAC for a planar quadrotor with a cable-suspended payload* (PROPOSED, not accepted); cited as "MQP §n" in the notebooks, which carry the key steps themselves |
 
 The notebooks import the thesis code from the main thesis checkout. That is the folder `...\Personal\thesis\gym-pymunk-quadrotor-suspended-load`, which must be on the `Claude` branch.
 - **A different checkout:** to use another thesis checkout, set `MRAC_THESIS_ROOT` before starting Jupyter.
@@ -24,6 +49,7 @@ The notebooks import the thesis code from the main thesis checkout. That is the 
 
    | Notebook | Time |
    |---|---|
+   | NB00 | a few seconds (one SymPy cell; the notebook is mostly text) |
    | NB05 | about 2.5 min |
    | NB06 | about 1.5 min (it loads the cached grid; set `RECOMPUTE = True` only to rerun the 250 offline episodes, about 4 min on 6 cores) |
    | NB07 | about 1.5 min (loads the cached arm-3 grid) |
