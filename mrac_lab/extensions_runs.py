@@ -16,7 +16,6 @@ import argparse
 import dataclasses
 import hashlib
 import json
-import math
 import os
 import shutil
 import time
@@ -271,7 +270,8 @@ def sources(thesis_root: Path) -> dict:
     thesis = ["experiments/mrac/vanilla_nl_mrac.py", "experiments/mrac/vanilla_mrac.py",
               "experiments/mrac/baselines.py", "experiments/mrac/quad_load_pend.py", "experiments/mrac/quad.py",
               "experiments/mrac/wind.py", "experiments/mrac/diagnostics.py"]
-    tut = ["mrac_lab/extensions_runs.py", "mrac_lab/vanilla_runs.py", "mrac_lab/provenance.py"]
+    tut = ["mrac_lab/extensions_runs.py", "mrac_lab/vanilla_runs.py", "mrac_lab/provenance.py",
+           "mrac_lab/preflight_gate.py"]
     out = {f"thesis:{f}": hashlib.sha256((thesis_root / f).read_bytes()).hexdigest() for f in thesis}
     out.update({f"tutorial:{f}": hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in tut})
     return out
@@ -280,13 +280,19 @@ def sources(thesis_root: Path) -> dict:
 def preflight(stage: str) -> dict:
     from experiments.mrac.vanilla_nl_mrac import NLDesign, nl_hover_jacobian
 
+    from mrac_lab.preflight_gate import classify
+
     out = {}
     for c in conditions():
         canon = make_canon({**c, "d": 0.0})
         p = dataclasses.replace(nl_params(stage), sigma=0.0)
         r = nl_hover_jacobian(canon, NLDesign.build(canon, p))
-        out[c["label"]] = {"rate_per_s": r["growth_rate_per_s"], "invariance": r["invariance_residual"],
-                           "drift": r["equilibrium_drift"]}
+        row = {"rate_per_s": r["growth_rate_per_s"], "invariance": r["invariance_residual"],
+               "drift": r["equilibrium_drift"], "n_neutral": r["n_neutral"]}
+        # protocol 08 AM1 threshold -0.05/s; strict invariance; drift rows are labelled
+        # "not a fixed point, not certified" instead of failing (AM5, Javier 2026-11-27)
+        row["gate"] = classify(row, rate_limit=-0.05, inclusive=True)
+        out[c["label"]] = row
     return out
 
 
@@ -332,12 +338,12 @@ def main() -> None:
     try:
         pre = preflight(args.stage)
         receipt["preflight"] = pre
-        # protocol 08 AM1 threshold -0.05/s, invariance and drift tolerances (Codex 27 EXT-06);
-        # sigma designs are certified through their sigma = 0 counterpart (AM4)
-        bad = {k: v for k, v in pre.items()
-               if not (math.isfinite(v["rate_per_s"]) and v["rate_per_s"] <= -0.05
-                       and v["invariance"] < 1e-6 and v["drift"] < 1e-9)}
+        # sigma designs are certified through their sigma = 0 counterpart (AM4); the rule
+        # per row is preflight_gate.classify (AM5): only "fail" stops the run
+        bad = {k: v for k, v in pre.items() if v["gate"]["status"] == "fail"}
         receipt["preflight_failures"] = bad
+        receipt["preflight_not_certified"] = sorted(k for k, v in pre.items()
+                                                    if v["gate"]["status"] == "not_certified")
         receipt["status"] = "running"
         _write(out / "receipt.json", receipt)
         if bad:

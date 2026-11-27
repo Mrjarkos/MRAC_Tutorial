@@ -318,8 +318,16 @@ def heldout_jobs(tuned: dict, plants=None) -> list[dict]:
 
 
 def preflight(jobs: list[dict]) -> dict:
+    """Hover-Jacobian row per (plant, design); ``gate`` per ``preflight_gate`` (AM5).
+
+    ``fails`` (the exclusion flag) is ``gate.status == "fail"``: a certified plant
+    (``l = l_r``) with a non-negative rate or a non-invariant ``S``. Drift and ``l != l_r``
+    rows are ``not_certified`` and never exclude a design.
+    """
     from experiments.mrac.baselines import canonical_offline_params
     from experiments.mrac.vanilla_mrac import VanillaDesign, hover_tick_jacobian
+
+    from mrac_lab.preflight_gate import classify
 
     base = canonical_offline_params()
     seen, out = set(), {}
@@ -338,12 +346,13 @@ def preflight(jobs: list[dict]) -> dict:
         r = hover_tick_jacobian(canon, VanillaDesign.build(canon, p), ideal=j["L"] == 2.0)
         rate = r["growth_rate_per_s"]
         certified = j["L"] == 2.0 and j.get("m_q_scale", 1.0) > 0
+        gate = classify({"rate_per_s": rate, "invariance": r["invariance_residual"],
+                         "drift": r["equilibrium_drift"]},
+                        rate_limit=0.0, inclusive=False, ideal_equilibrium=certified)
         out[f"m{j['m_L']:g}_L{j['L']:g}_q{j.get('m_q_scale', 1.0):g}_{hashlib.sha1(dkey.encode()).hexdigest()[:8]}"] = {
             "design": j["design"], "design_key": dkey, "rate_per_s": rate, "n_neutral": r["n_neutral"],
             "invariance_residual": r["invariance_residual"], "drift": r["equilibrium_drift"],
-            "ideal_equilibrium": certified,
-            "fails": bool(certified and (not math.isfinite(rate) or rate >= 0
-                                         or r["invariance_residual"] > 1e-6 or r["equilibrium_drift"] > 1e-9))}
+            "ideal_equilibrium": certified, "gate": gate, "fails": gate["status"] == "fail"}
     return out
 
 
@@ -353,7 +362,8 @@ def sources(thesis_root: Path) -> dict:
               "experiments/mrac/quad_load_pend.py", "experiments/mrac/quad.py", "experiments/mrac/wind.py",
               "experiments/mrac/diagnostics.py", "experiments/mrac/payload_law.py",
               "experiments/mrac/payload_reference.py", "experiments/mrac/law.py"]
-    tutorial = ["mrac_lab/vanilla_runs.py", "mrac_lab/vanilla_analysis.py", "mrac_lab/provenance.py"]
+    tutorial = ["mrac_lab/vanilla_runs.py", "mrac_lab/vanilla_analysis.py", "mrac_lab/provenance.py",
+                "mrac_lab/preflight_gate.py"]
     out = {f"thesis:{f}": hashlib.sha256((thesis_root / f).read_bytes()).hexdigest() for f in thesis}
     out.update({f"tutorial:{f}": hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in tutorial})
     return out
@@ -429,6 +439,7 @@ def main() -> None:
         # F3 / protocol 4 P4: exclude failing designs only (AM2: certified with sigma = 0).
         excluded = sorted({v["design_key"] for v in pre.values() if v["fails"]})
         receipt["excluded_designs"] = excluded
+        receipt["preflight_not_certified"] = sorted(k for k, v in pre.items() if v["gate"]["status"] == "not_certified")
         run_jobs = [j for j in jobs if json.dumps(j["design"], sort_keys=True) not in set(excluded)
                     or j["arm"] in ("softer", "pidff")]
         receipt["excluded_jobs"] = [j["id"] for j in jobs if j not in run_jobs]

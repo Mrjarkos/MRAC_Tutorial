@@ -115,7 +115,10 @@ def draw_vanilla_extensions(variant: str = "a", ax=None):
     D.wire([(xc, mid - 0.52), (xc, low + 0.52)], "$F$ (world force)", at=(xc - 0.12, 2.85), ha="right", va="center")
     D.block(9.9, low, 2.4, 0.85, "allocation $B^{-1}$\nmotors $\\tau_m$ (1st order)", "inner")
     D.wire([(xc - 1.62, low), (11.12, low)], "$u=[f_q,\\tau_q]$", at=(11.85, low + 0.07))
-    D.block(5.7, low, 3.2, 0.95, "real plant  $m_q, J_q, m_b, \\ell$\n(taut; $d=0$)", "plant")
+    # nonlinear variants run at d = 0 (protocol 08); the vanilla (NB10) episodes use the
+    # canonical attachment offset d = 0.3795 m (lane C item C6)
+    D.block(5.7, low, 3.2, 0.95,
+            "real plant  $m_q, J_q, m_b, \\ell$\n" + ("(taut; $d=0$)" if nl else "(taut; $d=0.3795$ m)"), "plant")
     D.wire([(8.68, low), (7.32, low)], "$T_{1,2}$", at=(8.0, low + 0.07))
     D.block(5.7, 0.35, 4.4, 0.45, "$\\mathscr{D}=[d_{q,y}, d_{q,z}, d_{q,\\tau}, d_\\varphi]$: wind, drag, gust, kicks", "plant", fs=9)
     D.wire([(5.7, 0.595), (5.7, low - 0.495)])
