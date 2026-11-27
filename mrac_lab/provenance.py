@@ -4,12 +4,19 @@ The notebooks never copy physics. They import ``experiments.mrac`` (and
 ``experiments.notebook_utils.style``) from the thesis repository. This module
 makes that import explicit and reproducible:
 
-* the thesis root is configurable (argument, or the ``MRAC_THESIS_ROOT``
-  environment variable, or the default below);
+* the thesis root is an explicit argument, or the ``MRAC_THESIS_ROOT``
+  environment variable, or else the checkout that provides the importable
+  ``experiments`` package. The thesis wheel packages only ``gym_pymunk_quadrotor``,
+  so ``experiments`` is importable only from an editable install of the checkout
+  (``pip install -e <thesis checkout>`` puts its root on ``sys.path``) or from
+  ``PYTHONPATH``. No
+  machine path is hard-coded, and nothing assumes where the two repositories sit
+  relative to each other;
 * ``setup`` prepends it to ``sys.path``, verifies that the imported modules
   really come from it, and reads the commit with ``git``;
-* ``banner`` prints the commit, the parameter sources and the
-  EXPLORATORY / offline / PROXY label.
+* ``banner`` prints the commit, how the checkout was found, the import origins
+  relative to the checkout, the parameter sources and the
+  EXPLORATORY / offline / PROXY label. It prints no absolute path.
 
 Nothing here installs, trains, or touches the network.
 """
@@ -18,19 +25,17 @@ from __future__ import annotations
 
 import html
 import importlib
+import importlib.util
 import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Tuple
 
-#: Default thesis checkout: the main checkout on the ``Claude`` branch.
-DEFAULT_THESIS_ROOT = Path(
-    r"C:\Users\Jcardenasbohorquez\OneDrive - Expleo France\Dokumente\Personal\thesis"
-    r"\gym-pymunk-quadrotor-suspended-load"
-)
 ENV_VAR = "MRAC_THESIS_ROOT"
+#: Package whose installed location identifies the thesis checkout.
+THESIS_PACKAGE = "experiments"
 
 #: Paths whose uncommitted state can change notebook results (2026-11-25: scoped to the
 #: imported code; unrelated files elsewhere under ``experiments/`` no longer mark a run dirty).
@@ -55,6 +60,8 @@ class Provenance:
     python: str
     origins: Mapping[str, str] = field(default_factory=dict)
     dirty_paths: Sequence[str] = ()
+    #: How the checkout was found: "argument", "MRAC_THESIS_ROOT" or "installed package".
+    source: str = "argument"
 
     @property
     def short_commit(self) -> str:
@@ -72,15 +79,46 @@ def _git(root: Path, *args: str) -> str:
     return out.stdout.strip() if out.returncode == 0 else ""
 
 
-def resolve_root(thesis_root: Optional[os.PathLike] = None) -> Path:
-    """Argument, else ``MRAC_THESIS_ROOT``, else the default W2c worktree."""
-    raw = thesis_root or os.environ.get(ENV_VAR) or DEFAULT_THESIS_ROOT
-    root = Path(raw).expanduser().resolve()
+def _installed_root() -> Optional[Path]:
+    """Checkout that provides the importable ``experiments`` package, if any."""
+    try:
+        spec = importlib.util.find_spec(THESIS_PACKAGE)
+    except (ImportError, ValueError):
+        return None
+    if spec is None:
+        return None
+    if spec.origin and spec.origin not in ("namespace", "built-in"):
+        return Path(spec.origin).resolve().parents[1]
+    locations = list(spec.submodule_search_locations or ())
+    return Path(locations[0]).resolve().parent if locations else None
+
+
+def find_root(thesis_root: Optional[os.PathLike] = None) -> Tuple[Path, str]:
+    """Return ``(root, source)``: argument, else ``MRAC_THESIS_ROOT``, else the installed package."""
+    if thesis_root:
+        raw, source = Path(thesis_root), "argument"
+    elif os.environ.get(ENV_VAR):
+        raw, source = Path(os.environ[ENV_VAR]), ENV_VAR
+    else:
+        raw, source = _installed_root(), "installed package"
+        if raw is None:
+            raise FileNotFoundError(
+                f"No thesis checkout found: the package '{THESIS_PACKAGE}' is not importable. "
+                f"Install the thesis checkout editable in this environment (pip install -e <thesis checkout>), "
+                f"set {ENV_VAR}, or pass thesis_root."
+            )
+    root = raw.expanduser().resolve()
     if not (root / "experiments" / "mrac").is_dir():
         raise FileNotFoundError(
-            f"{root} has no experiments/mrac; set {ENV_VAR} or pass thesis_root."
+            f"The thesis checkout found via {source} has no experiments/mrac; "
+            f"set {ENV_VAR} or pass thesis_root."
         )
-    return root
+    return root, source
+
+
+def resolve_root(thesis_root: Optional[os.PathLike] = None) -> Path:
+    """Argument, else ``MRAC_THESIS_ROOT``, else the checkout of the installed package."""
+    return find_root(thesis_root)[0]
 
 
 def setup(
@@ -98,7 +136,7 @@ def setup(
     at another commit, a warning is printed, not raised, so a reader can still
     run the notebook on a newer checkout.
     """
-    root = resolve_root(thesis_root)
+    root, source = find_root(thesis_root)
     root_str = str(root)
     if root_str in sys.path:
         sys.path.remove(root_str)
@@ -109,12 +147,12 @@ def setup(
     for name in modules:
         mod = importlib.import_module(name)
         file = Path(mod.__file__ or "").resolve()
-        origins[name] = str(file)
         if root not in file.parents:
             raise ImportError(
-                f"{name} was imported from {file}, not from the thesis root {root}. "
+                f"{name} was imported from outside the thesis checkout found via {source}. "
                 "Restart the kernel (another checkout was imported first)."
             )
+        origins[name] = file.relative_to(root).as_posix()
 
     commit = _git(root, "rev-parse", "HEAD") or "UNKNOWN"
     branch = _git(root, "rev-parse", "--abbrev-ref", "HEAD") or "UNKNOWN"
@@ -122,7 +160,7 @@ def setup(
     # porcelain lines are "XY path"; _git strips the leading space of the first line
     dirty_paths = tuple(line.split(None, 1)[1] for line in status.splitlines() if line.strip())
     prov = Provenance(
-        root, commit, branch, bool(dirty_paths), sys.version.split()[0], origins, dirty_paths
+        root, commit, branch, bool(dirty_paths), sys.version.split()[0], origins, dirty_paths, source
     )
     if pinned_commit and not commit.startswith(pinned_commit):
         print(
@@ -142,7 +180,7 @@ def banner(
     lines = [
         f"{title}",
         f"Label: {LABEL}",
-        f"Thesis checkout: {prov.root}",
+        f"Thesis checkout: found via {prov.source}",
         f"Commit: {prov.commit} (branch {prov.branch}"
         + (", UNCOMMITTED CHANGES in " + ", ".join(prov.dirty_paths) if prov.dirty else ", clean for " + ", ".join(DIRTY_SCOPE))
         + ")",
@@ -150,7 +188,7 @@ def banner(
         f"Claim limits: {CLAIM_LIMITS}",
     ]
     for name, path in prov.origins.items():
-        lines.append(f"import origin: {name} -> {path}")
+        lines.append(f"import origin: {name} -> <thesis>/{path}")
     if sources:
         lines.append("Parameter sources:")
         lines.extend(f"  {k}: {v}" for k, v in sources.items())

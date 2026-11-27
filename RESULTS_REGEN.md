@@ -1,8 +1,8 @@
 # Regenerating the results the notebooks read
 
-Experiment outputs under `results/mrac_*` are **not tracked** (Javier, 2026-11-25). They are cheap to regenerate (offline reduced model, minutes, development PC). The three cached grids `results/s30_offline_grid.csv`, `vehicle_mismatch_grid.csv` and `arm3_a0_grid.csv` stay tracked.
+Experiment outputs under `results/mrac_*` are **not tracked** (Javier, 2026-11-25), so a fresh clone does not have them; the notebooks then stop at the first cell that reads one, with a message naming this file, and they only accept run folders whose `receipt.json` says `completed`. They are cheap to regenerate (offline reduced model, minutes, development PC). The three cached grids `results/s30_offline_grid.csv`, `vehicle_mismatch_grid.csv` and `arm3_a0_grid.csv` stay tracked.
 
-All commands use the thesis interpreter `..\..\thesis\gym-pymunk-quadrotor-suspended-load\.venv-workspace\Scripts\python.exe` (written `python` below).
+All commands use a Python environment in which the thesis package is installed (`pip install -e <thesis checkout>`), such as the thesis repository's `.venv-workspace` (written `python` below). `<thesis root>` below means that checkout; no command assumes where it sits relative to this folder.
 - **Diagnostics (`experiments.mrac.diagnostics`) commands:** run them from **this folder** with `PYTHONPATH=<thesis root>`, so the `--out` paths below land here.
 - **Vanilla runner commands:** use `PYTHONPATH=<thesis root>;.`.
 - **Folder names:** new runs get new folder names (the runner never overwrites). Point the notebook cells at the new folder or rename it to the expected name.

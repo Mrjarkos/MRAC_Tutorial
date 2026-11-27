@@ -1,7 +1,7 @@
 # EXPLORATORY / offline / PROXY: arm 3 with the nominal-payload (A0) reference, one deterministic run per cell
 # created: 2026-11-25T10:16:47  workers=6  wall_s=44
 # thesis_commit: 4cfea8a665fe1baa8ffdf1e53e80b5a0cee0edef  branch: Claude  dirty: False []
-# thesis_root: C:\Users\Jcardenasbohorquez\OneDrive - Expleo France\Dokumente\Personal\thesis\gym-pymunk-quadrotor-suspended-load
+# thesis_root: <thesis> (machine path redacted 2026-11-27)
 # timing: T_s=0.02 N=10 sim_dt=0.002
 # vehicle (nominal, no vehicle mismatch): m=9.6 J=1.5447816 a_p=0.582 T_max=100.518 tau_m=0.05 d=0.3795
 # PID gains: PIDGains(kp_y=2.2, kp_z=5.3, kd_y=2.0, kd_z=3.0, kp_theta=25.0, kd_theta=20.0, ki_y=0.6, ki_z=1.8, m=9.6, J=1.5447816, g=9.81, min_thrust=2.0103600000000004, max_thrust=201.036, max_torque=57.91646124, max_pitch_angle=0.6, beta_smoothing=0.0)

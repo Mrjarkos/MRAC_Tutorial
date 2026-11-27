@@ -1,6 +1,6 @@
 """Compute the offline S30-style grid once and cache it: ``python -m mrac_lab.make_grid``.
 
-Writes ``results/s30_offline_grid.csv`` (summary metrics, provenance header).
+Writes the new file ``--out`` (summary metrics, provenance header); it never overwrites the tracked ``results/s30_offline_grid.csv``.
 Scope (approved): 25 conditions x 4 arms x 2 scenarios = 200 deterministic episodes.
 """
 
@@ -8,15 +8,19 @@ from __future__ import annotations
 
 import argparse
 import time
-from pathlib import Path
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--workers", type=int, default=6)
-    ap.add_argument("--out", default=str(Path(__file__).resolve().parents[1] / "results" / "s30_offline_grid.csv"))
+    ap.add_argument("--out", required=True,
+                    help="new CSV path; an existing file is refused (results/s30_offline_grid.csv is tracked historical evidence)")
     ap.add_argument("--thesis-root", default=None)
     args = ap.parse_args()
+    from pathlib import Path
+
+    if Path(args.out).exists():  # refuse before any episode runs (save_csv would refuse at the end)
+        raise SystemExit(f"--out {args.out} already exists; choose a new path (cached grids are never overwritten)")
 
     from mrac_lab import grid, provenance
 

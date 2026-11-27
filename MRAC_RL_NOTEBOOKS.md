@@ -37,8 +37,10 @@ The table is in reading order. In the logbook branch, NB05, NB06, NB08 and NB07 
 | Physics, controllers, metrics (tested code) | thesis repo `gym-pymunk-quadrotor-suspended-load`, branch **`Claude`**, folder `experiments/mrac/` (`quad.py`, `quad_load_pend.py`, `law.py`, `payload_law.py`, `baselines.py`, `offline_metrics.py`, `payload_reference.py`, `diagnostics.py`, `wind.py`, `vanilla_mrac.py`) with tests in `tests/mrac/` |
 | The mathematics | thesis repo `.ai/research/derivations/mrac-quadrotor-payload.md` = **MQP**, the derivation note *MRAC for a planar quadrotor with a cable-suspended payload* (PROPOSED, not accepted); cited as "MQP §n" in the notebooks, which carry the key steps themselves |
 
-The notebooks import the thesis code from the main thesis checkout. That is the folder `...\Personal\thesis\gym-pymunk-quadrotor-suspended-load`, which must be on the `Claude` branch.
-- **A different checkout:** to use another thesis checkout, set `MRAC_THESIS_ROOT` before starting Jupyter.
+The notebooks import the thesis code as a Python package (`experiments.mrac`). The two repositories are independent: this one imports the thesis package, the thesis repository imports nothing from here, and no file names a machine path or assumes where the two checkouts sit.
+- **Which checkout:** `mrac_lab.provenance` uses the thesis checkout that provides the importable `experiments` package in the kernel's environment. That needs an editable install (`pip install -e <thesis checkout>`; the `.venv-workspace` environment has one), because the thesis wheel itself packages only `gym_pymunk_quadrotor`. That checkout must be on the `Claude` branch.
+- **A different checkout:** set `MRAC_THESIS_ROOT` before starting Jupyter.
+- **Cached run folders:** `results/mrac_*` are local and not in Git. A fresh clone does not have them, so NB09-NB13 stop at their first cached cell with a message naming `RESULTS_REGEN.md`, which lists the command that produced each folder. The loaders only accept run folders whose receipt says `completed`.
 - **Provenance banner:** the first code cell prints the commit, branch and parameter sources, plus a warning if the checkout moved past the commit the notebook was written against.
 
 **Refactor worktrees are unrelated.** The other thesis folders and worktrees (`p7w1-*`, `p7w2-*`, `phase6/*`, `.ai/work/...`) belong to the Phase 6/7 refactor. These notebooks do not use them.
@@ -46,25 +48,25 @@ The notebooks import the thesis code from the main thesis checkout. That is the 
 ## How to launch
 
 1. Open this folder in VS Code.
-2. Open a notebook and select the kernel **Python (`.venv-workspace`)**, the interpreter at `...\thesis\gym-pymunk-quadrotor-suspended-load\.venv-workspace\Scripts\python.exe`. Not this repo's `.venv`: it lacks sympy and pandas.
+2. Open a notebook and select the kernel **Python (`.venv-workspace`)**, the thesis repository's workspace environment, in which the thesis package is installed. Not this repo's `.venv`: it lacks sympy and pandas.
 3. Run All. Exception: section 11 of NB07 asks not to execute that whole notebook without approval, because its interactive sections launch short offline episodes. Approximate times:
 
    | Notebook | Time |
    |---|---|
    | NB00 | a few seconds (one SymPy cell; the notebook is mostly text) |
    | NB05 | about 2.5 min |
-   | NB06 | about 1.5 min (it loads the cached grid; set `RECOMPUTE = True` only to rerun the 250 offline episodes, about 4 min on 6 cores) |
+   | NB06 | about 1.5 min (it loads the cached grid; a missing grid or `RECOMPUTE = True` stops the cell instead of rerunning the 250 episodes) |
    | NB07 | about 1.5 min (loads the cached arm-3 grid) |
    | NB08 | under 1 min (loads the cached mismatch grid) |
    | NB09 | under 1 min (reads saved A0 long-horizon, stabilization and wind results) |
    | NB10 | about 1 min (vanilla MRAC: closed forms, the hover-Jacobian scan, saved validation and tuning results) |
    | NB11-NB13 | about 1-2 min each (extension series a / a+b / a+b+c: derivation, block diagram, cached protocol-08 grids; interactive panels; the live panel runs one episode only when its button is pressed) |
 
-   To regenerate a grid: `python -m mrac_lab.make_grid`, `python -m mrac_lab.make_mismatch_grid` or `python -m mrac_lab.make_a0_grid`, from this folder, with the `.venv-workspace` Python. By default each command writes over the cached CSV of the same name, which is tracked historical evidence: run it only when that run is approved, and give `--out` a new path.
+   To regenerate a grid: `python -m mrac_lab.make_grid --out <new path>`, `python -m mrac_lab.make_mismatch_grid --out <new path>` or `python -m mrac_lab.make_a0_grid --out <new path>`, from this folder, with the `.venv-workspace` Python, and only when that run is approved. `--out` is required and an existing file is refused, so the tracked cached CSVs (historical evidence) cannot be overwritten.
 
 4. The interactive panels (sliders and dropdowns) redraw inline figures. Change a value and wait for the redraw.
 
-Command line alternative: `python -m jupyter nbconvert --to notebook --execute --inplace 06_Baselines_PIDFF_and_Linear_Damper.ipynb`, using the `.venv-workspace` Python.
+Command line alternative: `python -m jupyter nbconvert --to notebook --execute --output <new name> 06_Baselines_PIDFF_and_Linear_Damper.ipynb`, using the `.venv-workspace` Python. Do not use `--inplace`: it overwrites the saved outputs, which are part of the record.
 
 ## What to show (about 20 minutes)
 

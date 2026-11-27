@@ -155,13 +155,13 @@ HEADER_PREFIX = "# "
 
 def save_csv(df: pd.DataFrame, path, prov, canon, workers: int, seconds: float) -> None:
     """Write ``df`` with commented provenance lines (thesis commit, parameters, date)."""
-    from pathlib import Path
+    from .results import write_new_text
 
     lines = [
         "EXPLORATORY / offline / PROXY: offline S30-style grid, one deterministic run per cell",
         f"created: {datetime.datetime.now().isoformat(timespec='seconds')}  workers={workers}  wall_s={seconds:.0f}",
         f"thesis_commit: {prov.commit}  branch: {prov.branch}  dirty: {prov.dirty} {list(prov.dirty_paths)}",
-        f"thesis_root: {prov.root}",
+        f"thesis_source: {prov.source} (no machine path is recorded)",
         f"timing: T_s={canon.timing.T_s} N={canon.timing.N} sim_dt={canon.sim_dt}",
         f"vehicle: m={canon.quad.m} J={canon.quad.J} a_p={canon.quad.a_p} T_max={canon.quad.T_max} tau_m={canon.quad.tau_m} d={canon.payload.d}",
         f"gains: {canon.gains}",
@@ -174,8 +174,7 @@ def save_csv(df: pd.DataFrame, path, prov, canon, workers: int, seconds: float) 
     for ln in lines:
         buf.write(HEADER_PREFIX + ln + "\n")
     df.to_csv(buf, index=False)
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Path(path).write_text(buf.getvalue(), encoding="utf-8")
+    write_new_text(path, buf.getvalue())  # refuses an existing file: a cached grid is evidence
 
 
 def load_csv(path) -> "tuple[pd.DataFrame, list[str]]":

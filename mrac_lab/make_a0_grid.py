@@ -1,6 +1,6 @@
 """Compute the arm-3 A0 grid once and cache it: ``python -m mrac_lab.make_a0_grid``.
 
-Writes ``results/arm3_a0_grid.csv`` (summary metrics and telemetry, provenance header).
+Writes the new file ``--out`` (summary metrics and telemetry, provenance header); it never overwrites the tracked ``results/arm3_a0_grid.csv``.
 Scope (approved): 9 conditions x 2 scenarios x 3 compared controllers = 54 episodes plus
 18 normaliser episodes; one deterministic run per cell.
 """
@@ -9,15 +9,19 @@ from __future__ import annotations
 
 import argparse
 import time
-from pathlib import Path
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--workers", type=int, default=6)
-    ap.add_argument("--out", default=str(Path(__file__).resolve().parents[1] / "results" / "arm3_a0_grid.csv"))
+    ap.add_argument("--out", required=True,
+                    help="new CSV path; an existing file is refused (results/arm3_a0_grid.csv is tracked historical evidence)")
     ap.add_argument("--thesis-root", default=None)
     args = ap.parse_args()
+    from pathlib import Path
+
+    if Path(args.out).exists():  # refuse before any episode runs (save_csv would refuse at the end)
+        raise SystemExit(f"--out {args.out} already exists; choose a new path (cached grids are never overwritten)")
 
     from mrac_lab import a0_grid, provenance
 
