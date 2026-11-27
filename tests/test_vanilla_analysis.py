@@ -90,3 +90,29 @@ def test_g3_floor_admits_small_absolute_swing():
     g = A.gates(r, base_cell, floor=0.005)
     assert g["G3"] is True and g["B_S"] == 0.005
     assert A.gates({**r, "swing_rms_10_30": 0.006}, base_cell, floor=0.005)["G3"] is False
+
+
+def test_tie_window_is_one_percent_and_prefers_lower_reference_error(tmp_path):
+    a, b, c = _design(5.0), _design(10.0), _design(20.0)
+    ref = {json.dumps(a, sort_keys=True): 0.002, json.dumps(b, sort_keys=True): 0.0005,
+           json.dumps(c, sort_keys=True): 0.0001}
+    rows = _tune_rows([(a, 0.0100), (b, 0.01005), (c, 0.01012)],  # b at 0.5 %, c at 1.2 %: a 1.5 % window would pick c
+                      override=lambda d, m, s: {"ref_err_rms_last30": ref[json.dumps(d, sort_keys=True)]})
+    res = A.analyze_tune(_write(tmp_path, rows))
+    # b is within 1 % of the best task error and has the lower reference error; c is just outside 1 %
+    assert res["n_pass"] == 3 and res["selected"]["tag"] == design_tag(b)
+
+
+def test_g1_g2_failures_and_excluded_preflight_do_not_pass(tmp_path):
+    sat, drift, excl = _design(5.0), _design(10.0), _design(20.0)
+    rows = _tune_rows([(sat, 0.01), (drift, 0.01), (excl, 0.01)],
+                      override=lambda d, m, s: {"sat_frac": 0.0101} if d == sat
+                      else ({"ref_err_rms_last30": 0.003} if d == drift else {}))  # 0.003 > 1.1 * 0.002
+    res = A.analyze_tune(_write(tmp_path, rows, excluded=[json.dumps(excl, sort_keys=True)]))
+    assert res["n_pass"] == 0 and res["selected"] is None  # sat_frac 0.0101 is just above the 0.01 limit
+    assert res["fail_counts"]["G1"] == 1 and res["fail_counts"]["G2"] == 1 and res["n_excluded_preflight"] == 1
+
+
+def test_unevaluable_baseline_gives_unknown_g3():
+    g = A.gates(dict(GOOD), {"unevaluable": True})
+    assert g["G3"] is None and g["G1"] is True and g["G2"] is True

@@ -47,3 +47,36 @@ def test_both_directions_use_their_own_g3():
 def test_readout_sets_are_not_scored():
     rows = _base("c1") + [_row("a_online", "c1", 0.01, tag="long"), _row("v0_online", "c1", 0.02, tag="long")]
     assert A.compare(_df(rows))["a_online vs v0_online"] == {}
+
+
+def _scored_cells(n, x_wins, x_g3_ok=True):
+    """n comparable cells; X has the lower task error in the first x_wins cells, Y in the rest."""
+    rows = []
+    for i in range(n):
+        lab = f"c{i}"
+        x_task, y_task = (0.01, 0.02) if i < x_wins else (0.02, 0.01)
+        rows += _base(lab) + [_row("a_online", lab, x_task, swing=0.001 if x_g3_ok else 0.05),
+                              _row("v0_online", lab, y_task, swing=0.001)]
+    return rows
+
+
+def test_75_percent_boundary_in_both_directions():
+    res = A.compare(_df(_scored_cells(4, 3)))["a_online vs v0_online"]["D0 none"]
+    assert res["x_scores"] == 3 and res["x_improves"] is True  # 3/4 = 75 % passes
+    res = A.compare(_df(_scored_cells(4, 2)))["a_online vs v0_online"]["D0 none"]
+    assert res["x_scores"] == 2 and res["x_improves"] is False and res["y_improves"] is False
+    res = A.compare(_df(_scored_cells(4, 1)))["a_online vs v0_online"]["D0 none"]
+    assert res["y_scores"] == 3 and res["y_improves"] is True  # the Y direction uses the same 75 % rule
+
+
+def test_x_side_also_needs_its_own_g3():
+    res = A.compare(_df(_scored_cells(4, 4, x_g3_ok=False)))["a_online vs v0_online"]["D0 none"]
+    assert res["x_lower"] == 4 and res["x_scores"] == 0 and res["x_improves"] is False
+
+
+def test_equal_errors_score_for_neither_side_and_classes_are_labelled():
+    rows = _base("c1", ) + [_row("a_online", "c1", 0.01), _row("v0_online", "c1", 0.01)]
+    rows += [dict(r, dist="const") for r in _base("c2") + [_row("a_online", "c2", 0.01), _row("v0_online", "c2", 0.02)]]
+    res = A.compare(_df(rows))["a_online vs v0_online"]
+    assert res["D0 none"]["x_lower"] == 0 and res["D0 none"]["y_lower"] == 0 and res["D0 none"]["comparable"] == 1
+    assert res["D1 constant"]["x_scores"] == 1
