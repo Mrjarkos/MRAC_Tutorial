@@ -9,4 +9,3 @@ stable-baselines3>=2.7.0
 pandas>=2.2.0
 sympy>=1.13.0
 imageio>=2.37.3
-shimmy>=2.0

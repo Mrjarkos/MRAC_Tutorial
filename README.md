@@ -33,5 +33,5 @@ Model Reference Adaptive Control tutorials in python
   | notebook | 7.6.4 |
   | pytest | 8.4.2 |
 
-  The lower bounds in `requirements.txt` were not tested. `shimmy` is listed there but is not
-  imported by any notebook or module, and it was not installed in the tested environment.
+  The lower bounds in `requirements.txt` were not tested. (`shimmy` was removed from it on
+  2026-11-27: no notebook or module imports it.)
