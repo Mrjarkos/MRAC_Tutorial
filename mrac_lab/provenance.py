@@ -60,7 +60,7 @@ class Provenance:
     python: str
     origins: Mapping[str, str] = field(default_factory=dict)
     dirty_paths: Sequence[str] = ()
-    #: How the checkout was found: "argument", "MRAC_THESIS_ROOT" or "installed package".
+    #: How the checkout was found: "argument", "MRAC_THESIS_ROOT" or "importable experiments package".
     source: str = "argument"
 
     @property
@@ -94,13 +94,13 @@ def _installed_root() -> Optional[Path]:
 
 
 def find_root(thesis_root: Optional[os.PathLike] = None) -> Tuple[Path, str]:
-    """Return ``(root, source)``: argument, else ``MRAC_THESIS_ROOT``, else the installed package."""
+    """Return ``(root, source)``: argument, else ``MRAC_THESIS_ROOT``, else the importable experiments package."""
     if thesis_root:
         raw, source = Path(thesis_root), "argument"
     elif os.environ.get(ENV_VAR):
         raw, source = Path(os.environ[ENV_VAR]), ENV_VAR
     else:
-        raw, source = _installed_root(), "installed package"
+        raw, source = _installed_root(), "importable experiments package"
         if raw is None:
             raise FileNotFoundError(
                 f"No thesis checkout found: the package '{THESIS_PACKAGE}' is not importable. "
@@ -117,7 +117,7 @@ def find_root(thesis_root: Optional[os.PathLike] = None) -> Tuple[Path, str]:
 
 
 def resolve_root(thesis_root: Optional[os.PathLike] = None) -> Path:
-    """Argument, else ``MRAC_THESIS_ROOT``, else the checkout of the installed package."""
+    """Argument, else ``MRAC_THESIS_ROOT``, else the checkout that provides the importable experiments package."""
     return find_root(thesis_root)[0]
 
 

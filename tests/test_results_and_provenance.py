@@ -64,7 +64,7 @@ def test_root_comes_from_argument_env_or_installed_package(tmp_path, monkeypatch
     monkeypatch.delenv(provenance.ENV_VAR)
     fake_spec = SimpleNamespace(origin=str(root / "experiments" / "__init__.py"), submodule_search_locations=None)
     monkeypatch.setattr(provenance.importlib.util, "find_spec", lambda name: fake_spec)
-    assert provenance.find_root() == (root.resolve(), "installed package")
+    assert provenance.find_root() == (root.resolve(), "importable experiments package")
     monkeypatch.setattr(provenance.importlib.util, "find_spec", lambda name: None)
     with pytest.raises(FileNotFoundError, match="pip install -e"):
         provenance.find_root()
@@ -74,9 +74,41 @@ def test_root_comes_from_argument_env_or_installed_package(tmp_path, monkeypatch
 def test_banner_prints_no_absolute_path(tmp_path, capsys):
     root = _fake_checkout(tmp_path)
     prov = provenance.Provenance(root, "0" * 40, "Claude", False, "3.12", {"experiments.mrac.quad": "experiments/mrac/quad.py"},
-                                 (), "installed package")
+                                 (), "importable experiments package")
     provenance.banner(prov, "title")
     out = capsys.readouterr().out
     assert str(root) not in out and str(tmp_path) not in out
-    assert "Thesis checkout: found via installed package" in out
+    assert "Thesis checkout: found via importable experiments package" in out
     assert "experiments.mrac.quad -> <thesis>/experiments/mrac/quad.py" in out
+
+
+def test_argument_wins_over_env_and_a_checkout_needs_experiments_mrac(tmp_path, monkeypatch):
+    root = _fake_checkout(tmp_path)
+    other = tmp_path / "other"
+    other.mkdir()
+    monkeypatch.setenv(provenance.ENV_VAR, str(other))
+    assert provenance.find_root(root) == (root.resolve(), "argument")
+    with pytest.raises(FileNotFoundError, match="has no experiments/mrac"):
+        provenance.find_root()  # the env checkout lacks experiments/mrac
+
+
+def test_setup_records_origins_relative_and_refuses_outside_imports(tmp_path, monkeypatch):
+    import sys
+
+    root = _fake_checkout(tmp_path)
+    pkg = root / "b7_fake_pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("", encoding="utf-8")
+    (pkg / "mod.py").write_text("X = 1\n", encoding="utf-8")
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    try:
+        prov = provenance.setup(root, modules=("b7_fake_pkg.mod",))
+        assert prov.source == "argument"
+        assert prov.origins == {"b7_fake_pkg.mod": "b7_fake_pkg/mod.py"}
+        with pytest.raises(ImportError, match="outside the thesis checkout"):
+            provenance.setup(root, modules=("json",))  # the standard library is not under the checkout
+    finally:  # leave no fake package importable for later tests
+        for name in [m for m in sys.modules if m == "b7_fake_pkg" or m.startswith("b7_fake_pkg.")]:
+            del sys.modules[name]
+        sys.path_importer_cache.pop(str(root), None)
+    assert not any(m.startswith("b7_fake_pkg") for m in sys.modules)

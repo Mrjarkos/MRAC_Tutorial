@@ -43,6 +43,9 @@ class Diagram:
         self.ax.add_patch(FancyArrowPatch(path=Path(points), arrowstyle="-|>", mutation_scale=11, lw=1.1,
                                           color="0.15", ls=ls))
         if label:
+            if at is None:  # default anchor: midpoint of the first segment
+                (x0, y0), (x1, y1) = points[0], points[1]
+                at = ((x0 + x1) / 2, (y0 + y1) / 2)
             self.ax.text(*at, label, ha=ha, va=va, fontsize=FS, color="navy")
 
     def dot(self, x, y):

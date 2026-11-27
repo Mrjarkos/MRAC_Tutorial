@@ -109,6 +109,9 @@ def episode_panel(summary: pd.DataFrame):
                 print("no episodes for this selection (disturbances run on 6 representative conditions)")
                 return
             on = [g for g, w in groups.items() if w.value]
+            if not on:
+                print("tick at least one panel group (temporal, gains or Lyapunov)")
+                return
             fig, axes = plt.subplots(len(on), 2, figsize=(14, 3.2 * len(on)), squeeze=False, sharex=True)
             for _, r in d.iterrows():
                 df = pd.read_csv(Path(r.folder) / f"{r.id}.csv")
@@ -201,9 +204,11 @@ def live_panel(variant: str = "a"):
                          sigma=s["sigma"].value, rbf=rbf)
             n = int(secs.value / 0.02)
             traj, ic = scenario(scen.value, canon)
-            kicks, wind, dfun = {}, None, None
+            kicks, wind, dfun, note = {}, None, None, ""
             if dist.value in KICKS:
-                kicks = {kt: KICKS[dist.value] for kt in (1500, 3000) if kt < n}
+                kicks = {kt: KICKS[dist.value] for kt in (1500, 3000) if kt < n}  # at 30 s and 60 s
+                if len(kicks) < 2:
+                    note = f"note: the 60 s kick needs more than 60 s of episode; only {len(kicks)} kick(s) applied"
             else:
                 wind, dfun = disturbance(dist.value, n, 1)
             print("running ...")
@@ -211,6 +216,8 @@ def live_panel(variant: str = "a"):
                         stop=stop_reason, log_every=5)
             df = pd.DataFrame(lg.rows)
             out.clear_output(wait=True)
+            if note:
+                print(note)  # printed after the clear, so it stays visible with the figure
             print("failure:", lg.failure)
             fig, ax = plt.subplots(1, 4, figsize=(16, 3.3))
             ax[0].plot(df.t, np.hypot(df.y, df.z)); ax[0].set_title("task error [m]")
